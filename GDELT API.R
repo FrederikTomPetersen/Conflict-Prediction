@@ -6,10 +6,10 @@
           #                                                          #
           ############################################################
 
-library("gdeltr2", "hrbrthemes")
+library("gdeltr2")
 library("hrbrthemes")
           
-#The packageâ€™s data acquisition functions begin with get_urls_ for acquiring data store log information, 
+#The packageâs data acquisition functions begin with get_urls_ for acquiring data store log information, 
 #get_codes_ for acquiring code books and get_data_ for downloading and reading data.
 
 #The data tidying functions begin with parse_ and they apply to a number of the features in 
@@ -39,6 +39,12 @@ library("hrbrthemes")
                                                                                                  "tone", "protest", "artvolnorm"), days_moving_average = NA,
                                                      time_periods = "daily", use_multi_locations = F, return_wide = T,
                                                      visualize = F, nest_data = F, return_message = T)
+ 
+ Yemen_GDELT_vizualize <-  get_data_locations_instability_api(location_ids = Yemen,
+                                                    random_locations = NULL, variable_names = c("instability", "conflict",
+                                                                                                "tone", "protest", "artvolnorm"), days_moving_average = NA,
+                                                    time_periods = "daily", use_multi_locations = F, return_wide = T,
+                                                    visualize = T, nest_data = F, return_message = T)
  
  
           African_tone_visualize <-  get_data_locations_instability_api(location_ids = A_code,
