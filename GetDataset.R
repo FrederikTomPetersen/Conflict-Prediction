@@ -27,9 +27,4 @@ unzip
 GeoEPR <- sf::read_sf("GeoEPR-2018/GeoEPR.shp", crs = 4326)
 
 #3 
-
-DNS_CIESIN <- "http://sedac.ciesin.columbia.edu/geoserver/ows?service=wfs&version=1.0.0&request=GetCapabilities"
-
-
-#Subnationallevel administrative borders
-http://sedac.ciesin.columbia.edu/geoserver/ows?service=wms&version=1.0.0&request=GetCapabilities
+Gadm_2 <- sf::read_sf("gadm/level1/GADM_Level_2.shp", crs = 4326)
