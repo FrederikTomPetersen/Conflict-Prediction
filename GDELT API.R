@@ -2,25 +2,28 @@
 
           ############################################################
           #                                                          #
-          #                    Test af GdeltR2 bulided               #
+          #                    Test af GdeltR2 builded               #
           #                                                          #
           ############################################################
 
+#devtools::install_github("hrbrmstr/hrbrthemes")
+#devtools::install_github("abresler/gdeltr2")
+        
+                    
+library("devtools")
 library("gdeltr2")
 library("hrbrthemes")
+library("tidyverse")
+library("countrycode")
           
-#The package?s data acquisition functions begin with get_urls_ for acquiring data store log information, 
-#get_codes_ for acquiring code books and get_data_ for downloading and reading data.
+setwd("C:/Users/Frederik/Documents/konflikt/")
+            
+All_eventdb_url <-  get_urls_gdelt_event_log()
+Event_url_list <- All_eventdb_url$urlData 
+Event_udvalg_1 <- Event_url_list[1]# er en komprimeret udgave af årene 1970-2014
+Event_udvalg_5 <- Event_url_list[5]
+Event_udvalg_1_5 <- Event_url_list[2:6]
 
-#The data tidying functions begin with parse_ and they apply to a number of the features in 
-#the gkg and vgkg data stores that will get described in further detail farther below.          
-
-
-#
-  #Get events
-          
-event_log <-   get_urls_gdelt_event_log()
-event_url_list <- event_log$urlData
 
 stability_locations <-  get_codes_stability_locations()
           
