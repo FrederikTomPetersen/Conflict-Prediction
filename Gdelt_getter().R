@@ -1,5 +1,4 @@
 
-
 ############################################################
 #                                                          #
 #               Access gdelt eventdatabase v.1             #
@@ -8,7 +7,6 @@
 
 #devtools::install_github("hrbrmstr/hrbrthemes")
 #devtools::install_github("abresler/gdeltr2")
-
 
 library("devtools")
 library("gdeltr2")
@@ -23,10 +21,9 @@ setwd(my_workspace)
 
 All_eventdb_url <-  get_urls_gdelt_event_log()
 Event_url_list <- All_eventdb_url$urlData 
-Event_udvalg_1 <- Event_url_list[1]# er en komprimeret udgave af årene 1970-2014
 Event_udvalg_5 <- Event_url_list[5]
 Event_udvalg_1_5 <- Event_url_list[2:6]
-Event_udvalg_2_3 <- Event_url_list[2:3]
+
 
 Gdelt_header <-  "https://www.gdeltproject.org/data/lookups/CSV.header.fieldids.xlsx"
 Gdelt_header  <-  read.xlsx(Gdelt_header)
@@ -64,10 +61,9 @@ Countries <-  fread("https://github.com/FrederikTomPetersen/Ethnic-Conflict-Pred
 Africa = Countries %>% 
   filter(continent == "AF")
 Africa_List <-  Africa$isoAlpha3
-
 Eventtypes <- c("025","024", "142", "141", "145", "140", "130", "123")
 
-m=1
+
 Gdelt_getter = function(x, m) {
   #x = liste af url'er
   #m = startåret 
@@ -93,9 +89,10 @@ Gdelt_getter = function(x, m) {
     m = m + 1
     Sys.time()
     Sys.sleep(10)
-    
+  
   }
+  return(Gdelt_Data)
 }
 
-#eksempelvis
-Gdelt_getter(Event_udvalg_1_5, 1)
+
+Output <-  Gdelt_getter(Event_udvalg_1_5, 1)
