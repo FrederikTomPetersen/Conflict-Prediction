@@ -13,7 +13,7 @@ library("gdeltr2")
 library("hrbrthemes")
 library("tidyverse")
 library("countrycode")
-library("xlsx")
+library("readxl")
 library("data.table")
 
 my_workspace = "C:/Users/Frederik/Documents/konflikt/"
@@ -21,24 +21,30 @@ setwd(my_workspace)
 
 All_eventdb_url <-  get_urls_gdelt_event_log()
 Event_url_list <- All_eventdb_url$urlData 
-Event_udvalg_5 <- Event_url_list[5]
-Event_udvalg_1_5 <- Event_url_list[2:6]
+Event_1979_2005 <- Event_url_list[2:28]
 
 
-Gdelt_header <-  "https://www.gdeltproject.org/data/lookups/CSV.header.fieldids.xlsx"
-Gdelt_header  <-  read.xlsx(Gdelt_header)
+Gdelt_header <-  "https://github.com/FrederikTomPetersen/Ethnic-Conflict-Prediction/tree/master/Data/GDELT_HEADER.csv"
+Gdelt_header  <-  read_excel("GDELT_HEADER.xlsx")
 collist <-  colnames(Gdelt_header[1:57])
-colnames(table) <- collist
 
 
 #Forbedredning til "for loop"
 
 #Counter
-Iterations <- length(Event_url_list)
+Iterations <- length(Event_1979_2005)
 Iterations_left =Iterations
 
-#oprettelse af Dataframe, med rigtige datatyper
-Gdelt_Data <- data.frame(matrix(ncol =57, nrow =0))
+
+#Oprettelse af lister til filter:
+Countries <-  fread("Lande.csv")
+Africa = Countries %>% 
+  filter(continent == "AF")
+Africa_List <-  Africa$isoAlpha3
+Eventtypes <- c("025","024", "142", "141", "145", "140", "130", "123")
+
+
+
 
 Event <- Event_url_list[2]
 Basefile <- basename(Event)
@@ -52,16 +58,8 @@ Gdelt_Data <- Table %>%
   filter(Actor1CountryCode %in% Africa_List |Actor2CountryCode %in% Africa_List) %>% 
   filter(EventBaseCode %in% Eventtypes)
 Gdelt_Data <-  Gdelt_Data[0,]
-
-
-
-
-#Oprettelse af lister til filter:
-Countries <-  fread("https://github.com/FrederikTomPetersen/Ethnic-Conflict-Prediction/blob/master/Data/Lande.csv")
-Africa = Countries %>% 
-  filter(continent == "AF")
-Africa_List <-  Africa$isoAlpha3
-Eventtypes <- c("025","024", "142", "141", "145", "140", "130", "123")
+colnames(Gdelt_Data) <- collist
+rm(Table, Gdelt_header, Countries)
 
 
 Gdelt_getter = function(x, m) {
@@ -95,4 +93,4 @@ Gdelt_getter = function(x, m) {
 }
 
 
-Output <-  Gdelt_getter(Event_udvalg_1_5, 1)
+Output <-  Gdelt_getter(Event_1979_2005, 1)
