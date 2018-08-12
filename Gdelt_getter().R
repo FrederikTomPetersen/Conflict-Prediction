@@ -16,6 +16,7 @@ library("hrbrthemes")
 library("tidyverse")
 library("countrycode")
 library("xlsx")
+library("data.table")
 
 my_workspace = "C:/Users/Frederik/Documents/konflikt/"
 setwd(my_workspace)
@@ -25,6 +26,7 @@ Event_url_list <- All_eventdb_url$urlData
 Event_udvalg_1 <- Event_url_list[1]# er en komprimeret udgave af årene 1970-2014
 Event_udvalg_5 <- Event_url_list[5]
 Event_udvalg_1_5 <- Event_url_list[2:6]
+Event_udvalg_2_3 <- Event_url_list[2:3]
 
 Gdelt_header <-  "https://www.gdeltproject.org/data/lookups/CSV.header.fieldids.xlsx"
 Gdelt_header  <-  read.xlsx(Gdelt_header)
@@ -38,24 +40,40 @@ colnames(table) <- collist
 Iterations <- length(Event_url_list)
 Iterations_left =Iterations
 
-#oprettelse af Dataframe
+#oprettelse af Dataframe, med rigtige datatyper
 Gdelt_Data <- data.frame(matrix(ncol =57, nrow =0))
 
+Event <- Event_url_list[2]
+Basefile <- basename(Event)
+Basename <- substring(Basefile,1,4)
+download.file(Event, Basefile)
+unzip(Basefile)
+Tablename <- paste0(Basename,".csv")
+Table <-  fread(Tablename)
+colnames(Table) <-  collist
+Gdelt_Data <- Table %>% 
+  filter(Actor1CountryCode %in% Africa_List |Actor2CountryCode %in% Africa_List) %>% 
+  filter(EventBaseCode %in% Eventtypes)
+Gdelt_Data <-  Gdelt_Data[0,]
+
+
+
+
 #Oprettelse af lister til filter:
-Countries <-  read.xlsx("https://github.com/FrederikTomPetersen/Ethnic-Conflict-Prediction/blob/master/Data/Lande.xlsx")
+Countries <-  fread("https://github.com/FrederikTomPetersen/Ethnic-Conflict-Prediction/blob/master/Data/Lande.csv")
 Africa = Countries %>% 
   filter(continent == "AF")
 Africa_List <-  Africa$isoAlpha3
 
 Eventtypes <- c("025","024", "142", "141", "145", "140", "130", "123")
 
-
+m=1
 Gdelt_getter = function(x, m) {
   #x = liste af url'er
   #m = startåret 
-  for (i in Event_udvalg_1_5){
+  for (i in x){
     paste("Download nummer", m)
-    Event <- Event_udvalg_1_5[m]
+    Event <- x[m]
     Basefile <- basename(Event)
     Basename <- substring(Basefile,1,4)
     download.file(Event, Basefile)
@@ -66,18 +84,18 @@ Gdelt_getter = function(x, m) {
     Table <- Table %>% 
       filter(Actor1CountryCode %in% Africa_List |Actor2CountryCode %in% Africa_List) %>% 
       filter(EventBaseCode %in% Eventtypes)
-    rbind(Gdelt_Data, Table)         
+    Gdelt_Data <- rbind(Gdelt_Data, Table)         
     rm(Table)
     unlink(Basefile)
-    unlink(Basename)
-    print(paste("der er", Iterations_left, " tilbage af", Iterations, "iterationer"))
+    unlink(paste0(Basename,".csv"))
+    print(paste("der er", length(x)-m, " tilbage af", length(x), "iterationer"))
     Iterations_left = Iterations_left-1
     m = m + 1
     Sys.time()
-    Sys.sleep(60)
+    Sys.sleep(10)
     
   }
 }
 
 #eksempelvis
-Gdelt_getter(Event_udvalg_1_5,1)
+Gdelt_getter(Event_udvalg_1_5, 1)
