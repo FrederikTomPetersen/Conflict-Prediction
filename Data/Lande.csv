@@ -1,0 +1,251 @@
+﻿countryCode,countryName,continent,isoAlpha3
+AF,Afghanistan,AS,AFG
+AL,Albania,EU,ALB
+DZ,Algeria,AF,DZA
+AS,American Samoa,OC,ASM
+AD,Andorra,EU,AND
+AO,Angola,AF,AGO
+AI,Anguilla,NA,AIA
+AQ,Antarctica,AN,ATA
+AG,Antigua and Barbuda,NA,ATG
+AR,Argentina,SA,ARG
+AM,Armenia,AS,ARM
+AW,Aruba,NA,ABW
+AU,Australia,OC,AUS
+AT,Austria,EU,AUT
+AZ,Azerbaijan,AS,AZE
+BS,Bahamas,NA,BHS
+BH,Bahrain,AS,BHR
+BD,Bangladesh,AS,BGD
+BB,Barbados,NA,BRB
+BY,Belarus,EU,BLR
+BE,Belgium,EU,BEL
+BZ,Belize,NA,BLZ
+BJ,Benin,AF,BEN
+BM,Bermuda,NA,BMU
+BT,Bhutan,AS,BTN
+BO,Bolivia,SA,BOL
+BQ,Bonaire,NA,BES
+BA,Bosnia and Herzegovina,EU,BIH
+BW,Botswana,AF,BWA
+BV,Bouvet Island,AN,BVT
+BR,Brazil,SA,BRA
+IO,British Indian Ocean Territory,AS,IOT
+VG,British Virgin Islands,NA,VGB
+BN,Brunei,AS,BRN
+BG,Bulgaria,EU,BGR
+BF,Burkina Faso,AF,BFA
+BI,Burundi,AF,BDI
+KH,Cambodia,AS,KHM
+CM,Cameroon,AF,CMR
+CA,Canada,NA,CAN
+CV,Cape Verde,AF,CPV
+KY,Cayman Islands,NA,CYM
+CF,Central African Republic,AF,CAF
+TD,Chad,AF,TCD
+CL,Chile,SA,CHL
+CN,China,AS,CHN
+CX,Christmas Island,OC,CXR
+CC,Cocos [Keeling] Islands,AS,CCK
+CO,Colombia,SA,COL
+KM,Comoros,AF,COM
+CK,Cook Islands,OC,COK
+CR,Costa Rica,NA,CRI
+HR,Croatia,EU,HRV
+CU,Cuba,NA,CUB
+CW,Curacao,NA,CUW
+CY,Cyprus,EU,CYP
+CZ,Czechia,EU,CZE
+CD,Democratic Republic of the Congo,AF,COD
+DK,Denmark,EU,DNK
+DJ,Djibouti,AF,DJI
+DM,Dominica,NA,DMA
+DO,Dominican Republic,NA,DOM
+TL,East Timor,OC,TLS
+EC,Ecuador,SA,ECU
+EG,Egypt,AF,EGY
+SV,El Salvador,NA,SLV
+GQ,Equatorial Guinea,AF,GNQ
+ER,Eritrea,AF,ERI
+EE,Estonia,EU,EST
+ET,Ethiopia,AF,ETH
+FK,Falkland Islands,SA,FLK
+FO,Faroe Islands,EU,FRO
+FJ,Fiji,OC,FJI
+FI,Finland,EU,FIN
+FR,France,EU,FRA
+GF,French Guiana,SA,GUF
+PF,French Polynesia,OC,PYF
+TF,French Southern Territories,AN,ATF
+GA,Gabon,AF,GAB
+GM,Gambia,AF,GMB
+GE,Georgia,AS,GEO
+DE,Germany,EU,DEU
+GH,Ghana,AF,GHA
+GI,Gibraltar,EU,GIB
+GR,Greece,EU,GRC
+GL,Greenland,NA,GRL
+GD,Grenada,NA,GRD
+GP,Guadeloupe,NA,GLP
+GU,Guam,OC,GUM
+GT,Guatemala,NA,GTM
+GG,Guernsey,EU,GGY
+GN,Guinea,AF,GIN
+GW,Guinea-Bissau,AF,GNB
+GY,Guyana,SA,GUY
+HT,Haiti,NA,HTI
+HM,Heard Island and McDonald Islands,AN,HMD
+HN,Honduras,NA,HND
+HK,Hong Kong,AS,HKG
+HU,Hungary,EU,HUN
+IS,Iceland,EU,ISL
+IN,India,AS,IND
+ID,Indonesia,AS,IDN
+IR,Iran,AS,IRN
+IQ,Iraq,AS,IRQ
+IE,Ireland,EU,IRL
+IM,Isle of Man,EU,IMN
+IL,Israel,AS,ISR
+IT,Italy,EU,ITA
+CI,Ivory Coast,AF,CIV
+JM,Jamaica,NA,JAM
+JP,Japan,AS,JPN
+JE,Jersey,EU,JEY
+JO,Jordan,AS,JOR
+KZ,Kazakhstan,AS,KAZ
+KE,Kenya,AF,KEN
+KI,Kiribati,OC,KIR
+XK,Kosovo,EU,XKX
+KW,Kuwait,AS,KWT
+KG,Kyrgyzstan,AS,KGZ
+LA,Laos,AS,LAO
+LV,Latvia,EU,LVA
+LB,Lebanon,AS,LBN
+LS,Lesotho,AF,LSO
+LR,Liberia,AF,LBR
+LY,Libya,AF,LBY
+LI,Liechtenstein,EU,LIE
+LT,Lithuania,EU,LTU
+LU,Luxembourg,EU,LUX
+MO,Macao,AS,MAC
+MK,Macedonia,EU,MKD
+MG,Madagascar,AF,MDG
+MW,Malawi,AF,MWI
+MY,Malaysia,AS,MYS
+MV,Maldives,AS,MDV
+ML,Mali,AF,MLI
+MT,Malta,EU,MLT
+MH,Marshall Islands,OC,MHL
+MQ,Martinique,NA,MTQ
+MR,Mauritania,AF,MRT
+MU,Mauritius,AF,MUS
+YT,Mayotte,AF,MYT
+MX,Mexico,NA,MEX
+FM,Micronesia,OC,FSM
+MD,Moldova,EU,MDA
+MC,Monaco,EU,MCO
+MN,Mongolia,AS,MNG
+ME,Montenegro,EU,MNE
+MS,Montserrat,NA,MSR
+MA,Morocco,AF,MAR
+MZ,Mozambique,AF,MOZ
+MM,Myanmar [Burma],AS,MMR
+NA,Namibia,AF,NAM
+NR,Nauru,OC,NRU
+NP,Nepal,AS,NPL
+NL,Netherlands,EU,NLD
+NC,New Caledonia,OC,NCL
+NZ,New Zealand,OC,NZL
+NI,Nicaragua,NA,NIC
+NE,Niger,AF,NER
+NG,Nigeria,AF,NGA
+NU,Niue,OC,NIU
+NF,Norfolk Island,OC,NFK
+KP,North Korea,AS,PRK
+MP,Northern Mariana Islands,OC,MNP
+NO,Norway,EU,NOR
+OM,Oman,AS,OMN
+PK,Pakistan,AS,PAK
+PW,Palau,OC,PLW
+PS,Palestine,AS,PSE
+PA,Panama,NA,PAN
+PG,Papua New Guinea,OC,PNG
+PY,Paraguay,SA,PRY
+PE,Peru,SA,PER
+PH,Philippines,AS,PHL
+PN,Pitcairn Islands,OC,PCN
+PL,Poland,EU,POL
+PT,Portugal,EU,PRT
+PR,Puerto Rico,NA,PRI
+QA,Qatar,AS,QAT
+CG,Republic of the Congo,AF,COG
+RO,Romania,EU,ROU
+RU,Russia,EU,RUS
+RW,Rwanda,AF,RWA
+RE,Réunion,AF,REU
+BL,Saint Barthélemy,NA,BLM
+SH,Saint Helena,AF,SHN
+KN,Saint Kitts and Nevis,NA,KNA
+LC,Saint Lucia,NA,LCA
+MF,Saint Martin,NA,MAF
+PM,Saint Pierre and Miquelon,NA,SPM
+VC,Saint Vincent and the Grenadines,NA,VCT
+WS,Samoa,OC,WSM
+SM,San Marino,EU,SMR
+SA,Saudi Arabia,AS,SAU
+SN,Senegal,AF,SEN
+RS,Serbia,EU,SRB
+SC,Seychelles,AF,SYC
+SL,Sierra Leone,AF,SLE
+SG,Singapore,AS,SGP
+SX,Sint Maarten,NA,SXM
+SK,Slovakia,EU,SVK
+SI,Slovenia,EU,SVN
+SB,Solomon Islands,OC,SLB
+SO,Somalia,AF,SOM
+ZA,South Africa,AF,ZAF
+GS,South Georgia and the South Sandwich Islands,AN,SGS
+KR,South Korea,AS,KOR
+SS,South Sudan,AF,SSD
+ES,Spain,EU,ESP
+LK,Sri Lanka,AS,LKA
+SD,Sudan,AF,SDN
+SR,Suriname,SA,SUR
+SJ,Svalbard and Jan Mayen,EU,SJM
+SZ,Swaziland,AF,SWZ
+SE,Sweden,EU,SWE
+CH,Switzerland,EU,CHE
+SY,Syria,AS,SYR
+ST,São Tomé and Príncipe,AF,STP
+TW,Taiwan,AS,TWN
+TJ,Tajikistan,AS,TJK
+TZ,Tanzania,AF,TZA
+TH,Thailand,AS,THA
+TG,Togo,AF,TGO
+TK,Tokelau,OC,TKL
+TO,Tonga,OC,TON
+TT,Trinidad and Tobago,NA,TTO
+TN,Tunisia,AF,TUN
+TR,Turkey,AS,TUR
+TM,Turkmenistan,AS,TKM
+TC,Turks and Caicos Islands,NA,TCA
+TV,Tuvalu,OC,TUV
+UM,U.S. Minor Outlying Islands,OC,UMI
+VI,U.S. Virgin Islands,NA,VIR
+UG,Uganda,AF,UGA
+UA,Ukraine,EU,UKR
+AE,United Arab Emirates,AS,ARE
+GB,United Kingdom,EU,GBR
+US,United States,NA,USA
+UY,Uruguay,SA,URY
+UZ,Uzbekistan,AS,UZB
+VU,Vanuatu,OC,VUT
+VA,Vatican City,EU,VAT
+VE,Venezuela,SA,VEN
+VN,Vietnam,AS,VNM
+WF,Wallis and Futuna,OC,WLF
+EH,Western Sahara,AF,ESH
+YE,Yemen,AS,YEM
+ZM,Zambia,AF,ZMB
+ZW,Zimbabwe,AF,ZWE
+AX,Åland,EU,ALA

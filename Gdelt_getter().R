@@ -15,6 +15,7 @@ library("gdeltr2")
 library("hrbrthemes")
 library("tidyverse")
 library("countrycode")
+library("xlsx")
 
 my_workspace = "C:/Users/Frederik/Documents/konflikt/"
 setwd(my_workspace)
@@ -25,8 +26,8 @@ Event_udvalg_1 <- Event_url_list[1]# er en komprimeret udgave af årene 1970-201
 Event_udvalg_5 <- Event_url_list[5]
 Event_udvalg_1_5 <- Event_url_list[2:6]
 
-
-Gdelt_header  <-  read.xlsx("https://www.gdeltproject.org/data/lookups/CSV.header.fieldids.xlsx")
+Gdelt_header <-  "https://www.gdeltproject.org/data/lookups/CSV.header.fieldids.xlsx"
+Gdelt_header  <-  read.xlsx(Gdelt_header)
 collist <-  colnames(Gdelt_header[1:57])
 colnames(table) <- collist
 
