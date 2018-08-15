@@ -11,11 +11,11 @@ dbExistsTable(con, "gdelt")
 # False
 
 
-dbWriteTable(con, "gdelt", 
+dbWriteTable(con, "gdelt_work_dataset", 
              value = Output, append = TRUE, row.names = FALSE)
 
 # query the data from postgreSQL 
-df_postgres <- dbGetQuery(con, "SELECT * from gdelt")
+df_postgres <- dbGetQuery(con, "SELECT * from gdelt_work_dataset")
 
 # compares the two data.frames
 identical(Output, df_postgres)
