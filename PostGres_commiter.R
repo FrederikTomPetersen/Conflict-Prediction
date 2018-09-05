@@ -17,14 +17,4 @@ dbWriteTable(con, "gdelt_work_dataset",
 # query the data from postgreSQL 
 df_postgres <- dbGetQuery(con, "SELECT * from gdelt_work_dataset")
 
-# compares the two data.frames
-identical(Output, df_postgres)
-
-# Basic Graph of the Data
-require(ggplot2)
-ggplot(df_postgres, aes(x = as.factor(cyl), y = mpg, fill = as.factor(cyl))) + 
-  geom_boxplot() + theme_bw()
-
-
-
-
+rm(con, drv)
