@@ -8,15 +8,24 @@ cat("\014")
 
 #merging gdelt Frames
 
-Gdelt <-  rbind(Gdelt1, Gdelt2, Gdelt3, Gdelt4,Gdelt5, Gdelt6, Gdelt7, Gdelt8)
+# Gdelt <-  rbind(Gdelt1, Gdelt2, Gdelt3, Gdelt4,Gdelt5, Gdelt6, Gdelt7, Gdelt8)
 
 
 # Expanding
 GED_disaggregated <-  GED_disaggregated %>% 
   group_by(country) %>% 
-  expand(year= 1979:2005, month = 1:12) %>% #Hvis man undlader at angive date range, så får jeg væsentligt mindre data
+  expand(year= 2000:2017, month = 1:12) %>% 
   left_join(GED_disaggregated) %>% 
   arrange(country, year, month)
+
+# #joining on country codes'
+setwd(DataCave)
+Countries <-  fread("Lande.csv")
+Countries$countryName <-  tolower(Countries$countryName)
+GED_disaggregated$country <- tolower(GED_disaggregated$country)
+GED_disaggregated <- GED_disaggregated %>%
+  left_join(Countries, by = c("country" = "countryName"), copy =T)
+
 
 #Joining GED & GDELT
 Samlet <- GED_disaggregated %>% 
@@ -36,12 +45,13 @@ WDI_samlet <-  wdi_gdp_capita_2011c_country %>%
   left_join(wdi_gov_debt, by = c("countryName"="countryName", "year" = "year")) %>% 
   left_join(wdi_gov_expenditure, by = c("countryName"="countryName", "year" = "year")) %>% 
   left_join(wdi_secondary_male_enrollment, by = c("countryName"="countryName", "year" = "year")) %>% 
-    subset(select = c(countryName, isoAlpha3.x, iso2c.x, year, GC.DOD.TOTL.GD.ZS, NE.DAB.TOTL.ZS, SE.SEC.NENR.MA, NY.GDP.PCAP.PP.KD)) %>% 
+  transmute(countryName, isoalpha3 =isoAlpha3.x, iso2c =iso2c.x, year, gov_debt = GC.DOD.TOTL.GD.ZS, gov_expenditure =NE.DAB.TOTL.ZS, secondary_male_enrollment= SE.SEC.NENR.MA, gdp_pr_capita = NY.GDP.PCAP.PP.KD) %>% 
+  filter(year >= 2000 ) %>% 
   arrange(countryName, year)
 
 
-Samlet <-  Samlet %>% 
-  full_join(WDI_samlet, by = c("isoAlpha3" ="isoAlpha3.x", "year" = "year"))
+lets_reg_it<-  Samlet %>% 
+  full_join(WDI_samlet, by = c("isoAlpha3" ="isoalpha3", "year" = "year"))
 
 
 df <- Samlet

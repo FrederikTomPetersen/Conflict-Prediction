@@ -15,29 +15,20 @@ cat("\014")
 #setwd(Private)
 #source("PostGres_connect.R")
 
-Gdelt1 <- dbGetQuery(con, "SELECT * from gdelt2000_2006")
-Gdelt2 <- dbGetQuery(con, "SELECT * from gdelt2006_2010")
-Gdelt3 <- dbGetQuery(con, "SELECT * from gdelt2011")
-Gdelt4 <- dbGetQuery(con, "SELECT * from gdelt2012")
-Gdelt5 <- dbGetQuery(con, "SELECT * from gdelt2013")
-Gdelt6 <- dbGetQuery(con, "SELECT * from gdelt2014")
-Gdelt7 <- dbGetQuery(con, "SELECT * from gdelt2015")
-Gdelt8 <- dbGetQuery(con, "SELECT * from gdelt2016")
+# Gdelt1 <- dbGetQuery(con, "SELECT * from gdelt2000_2006")
+# Gdelt2 <- dbGetQuery(con, "SELECT * from gdelt2006_2010")
+# Gdelt3 <- dbGetQuery(con, "SELECT * from gdelt2011")
+# Gdelt4 <- dbGetQuery(con, "SELECT * from gdelt2012")
+# Gdelt5 <- dbGetQuery(con, "SELECT * from gdelt2013")
+# Gdelt6 <- dbGetQuery(con, "SELECT * from gdelt2014")
+# Gdelt7 <- dbGetQuery(con, "SELECT * from gdelt2015")
+# Gdelt8 <- dbGetQuery(con, "SELECT * from gdelt2016")
 
 
-
-
-
-
-
-
-
-
+Gdelt <- dbGetQuery(con, "SELECT * from gdelt_group")
 GED_disaggregated <- dbGetQuery(con, "SELECT * from ged")
 
-Gdelt <- dbGetQuery(con, "SELECT * from gdelt_work_dataset")      # 1.268395 observationer
-
-
+#Gdelt <- dbGetQuery(con, "SELECT * from gdelt_work_dataset")      # 1.268395 observationer
 #Gdelt2 <- dbGetQuery(con, "SELECT * from gdelt_work_dataset_nyt") # 21.048124 observationer , koster omkring 20 gb i midlertidig plads at loade
 #Gdelt3 <- dbGetQuery(con, "SELECT * from gdelt_y_m_d")            # 27.277184 observationer , koster omkring 30 gb i midlertidig plads at loade
 

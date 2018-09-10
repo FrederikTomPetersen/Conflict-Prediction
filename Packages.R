@@ -16,15 +16,15 @@ cat("\014")
 #devtools::install_github("ropensci/rWBclimate")
 
 
-Packages <- c("devtools",
-              "dplyr",
-              "caret",
-              "sf",
-              "trelliscopejs",
-              "gdeltr2")
-
-
-lapply(Packages, library, character.only = TRUE)
+# Packages <- c("devtools",
+#               "dplyr",
+#               "caret",
+#               "sf",
+#               "trelliscopejs",
+#               "gdeltr2")
+# 
+# 
+# lapply(Packages, library, character.only = TRUE)
 
 #ggdelt and posgres
 library("devtools")
@@ -35,6 +35,8 @@ library("countrycode")
 library("readxl")
 library("data.table")
 require("RPostgreSQL")
+require("caret")
+require("trellisscopejs")
 
 #genereal
 library("dplyr")
@@ -49,3 +51,7 @@ library(rWBclimate)
 
 #visualisering
 library(ggplot2)
+
+# regression
+library(caret)
+library(xgboost)

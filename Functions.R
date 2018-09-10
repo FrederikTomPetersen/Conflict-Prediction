@@ -94,11 +94,11 @@ Gdelt_getter2 = function(x, m) {
 #                          Gdelt_getter3                           #
 ###################################################################
 
-collist <- Gdelt_header[1:58]
-Countries_List <-  Countries$isoAlpha3
-Iterations <- length(Event_y_m_d)
-Iterations_left =Iterations
-Event_y_m_d <- Event_url_list[116:2085]
+# collist <- Gdelt_header[1:58]
+# Countries_List <-  Countries$isoAlpha3
+# Iterations <- length(Event_y_m_d)
+# Iterations_left =Iterations
+# Event_y_m_d <- Event_url_list[116:2085]
 
 
 
@@ -179,6 +179,19 @@ tidyr_replace_na   <- function(x) { replace_na(x, as.list(setNames(rep(0, 10), a
 
 #EventClassifier 
 
+Demand_help <-as.numeric(c("1031","1032","1033","1034"))
+Demand_political_change <- as.numeric(c("104","1041","1042","1043","1044","105","1051","1052","1053","1054","1055","1056"))
+Disaprove <- as.numeric(c("110","111","112","1121","1122","1123","1124","1125","113","114","115","116"))
+Rejction_of_demand <- as.numeric(c("120","121","1211","1212","122","122","1222","1223","1224","123","1231","1232","1233","1234","124","1241","1242","1243","124","1245","1246","125","126","127","128","129"))
+Threaten <-  as.numeric(c("130","131","1311","1312","1313","132","1321","1322","1323","1324","133","134","135","136","137","138","1381","1382","1383","1384","1385","139"))
+Protest <- as.numeric(c("140","141","1411","1412","1413","1414","142","1421","1422","1423","1424","143","1431","1432","1433","1434","144","1441","1442","1443","1444","145"))
+Exhibit_force <- as.numeric(c("150","151","152","153","154","155"))
+Reduce_relations <- as.numeric(c("160","161","162","1621","1622","1623","163","164","165","166","1661","1662","1663"))
+Coerce <- as.numeric(c("170","171","1711","1712","172","1721","1722","1723","1724","173","174","175","176"))
+Non_lethalViolence <-  as.numeric(c("181","1821"))
+Occupy_block <- as.numeric(c("191","192"))
+
+
 Event_Classifier = function(x){
   output <- x %>% 
     mutate(EventClass = case_when(EventCode %in%  Demand_help ~ "Demand_help", 
@@ -225,7 +238,7 @@ Create_Date = function(x) {
 #####################################################################
 Gdelt_Keeper = function(x){
   output <- x
-  vars_to_keep <- c("GLOBALEVENTID","year","month","Actor1Name","Actor1CountryCode","Actor2Name","Actor2CountryCode","EventCode","GoldsteinScale", "NumMentions","NumArticles","ActionGeo_CountryCode","ActionGeo_CountryCode","year","month","date","classifier")
+  vars_to_keep <- c("GLOBALEVENTID","year","month","Actor1Name","Actor1CountryCode","Actor2Name","Actor2CountryCode","EventCode","GoldsteinScale", "AvgTone", "NumMentions","NumArticles","ActionGeo_CountryCode","ActionGeo_CountryCode","year","month","date","EventClass")
   output <- output[,(colnames(output) %in% vars_to_keep)] 
   return(output)
 }
@@ -243,6 +256,27 @@ Gdelt_Tidier = function(x){
 }
 
 
+#####################################################################
+###                    Gdelt_processor                         ###
+#####################################################################
+Gdelt_processor = function(x) {
+  x <-  Create_Date(x)
+  x <- x %>% 
+    mutate(date = as.Date(paste0(year, '.', month, '.', 1), format = "%Y.%m.%d"))
+  x$EventCode <- as.numeric(x$EventCode)
+  x <- Event_Classifier(x)
+  x <-  Gdelt_Keeper(x)
+  x <- x %>% 
+    filter(!is.na(ActionGeo_CountryCode) | ActionGeo_CountryCode !="") %>% 
+    group_by(ActionGeo_CountryCode, year, month, EventClass)
+  x <-  x %>% 
+    summarize(Num_events = n(),
+              tone = mean(AvgTone),
+              Goldstein = mean(GoldsteinScale)) %>% 
+    arrange(ActionGeo_CountryCode, year, month)
+  dbWriteTable(con, "gdelt_group", 
+               value = x, append = TRUE, row.names = FALSE)
+}
 
 
 

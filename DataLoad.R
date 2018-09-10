@@ -31,8 +31,6 @@ Event_1979_2005 <- Event_url_list[2:28]
 #get headers for df
 
 
-
-Gdelt_header <-  "https://github.com/FrederikTomPetersen/Ethnic-Conflict-Prediction/tree/master/Data/GDELT_HEADER.csv"
 Gdelt_header  <-  fread("GDELT_HEADER.csv")
 Gdelt_header <-  Gdelt_header$`Field Name`
 collist <- Gdelt_header[1:57]
@@ -65,6 +63,7 @@ unzip(Basefile)
 Tablename <- paste0(Basename,".csv")
 Table <-  fread(Tablename)
 colnames(Table) <-  collist
+range(Table$)
 Gdelt_Data <- Table %>% 
   filter(Actor1CountryCode %in% Countries_List |Actor2CountryCode %in% Countries_List) %>% 
   filter(EventCode %in% Eventtypes)

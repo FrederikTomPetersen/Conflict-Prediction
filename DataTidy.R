@@ -17,38 +17,62 @@ cat("\014")
 ############################################################
 
 
-#Creating year, month, day columns
-GED_disaggregated <- GED_disaggregated %>% 
+# #Creating year, month, day columns
+GED_disaggregated <- GED_disaggregated %>%
   separate(date_start, c("year", "month", "day"), "-")
 
-
-#Grouping by country, year, month
-GED_disaggregated <-  GED_disaggregated %>% 
+# 
+# #Grouping by country, year, month
+GED_disaggregated <-  GED_disaggregated %>%
   group_by(country, year, month)
 
-
-#summarizing data
-GED_disaggregated <- GED_disaggregated %>% 
-  summarize(TotalDeaths = sum(deaths_a + deaths_b + deaths_civilians + deaths_unknown), 
+# 
+# #summarizing data
+GED_disaggregated <- GED_disaggregated %>%
+  summarize(TotalDeaths = sum(deaths_a + deaths_b + deaths_civilians + deaths_unknown),
             Incidents = n(),
             A_dead = sum(deaths_a),
-            B_dead = sum(deaths_b))%>% 
+            B_dead = sum(deaths_b))%>%
   arrange(country, year,month)
 
-#formats
+# #formats
 GED_disaggregated$year <- as.numeric(GED_disaggregated$year)
 GED_disaggregated$month <- as.numeric(GED_disaggregated$month)
 GED_disaggregated$country <- tolower(GED_disaggregated$country)
 
+# 
 
-#joining on country codes'
-setwd(DataCave)
-Countries <-  fread("Lande.csv")
-Countries$countryName <-  tolower(Countries$countryName)
-GED_disaggregated$country <- tolower(GED_disaggregated$country)
+
+#selecting from 2000 and forward
 GED_disaggregated <- GED_disaggregated %>% 
-  left_join(Countries, by = c("country" = "countryName"), copy =T)
+  filter(year >= 2000) 
 
+
+
+############################################################
+#                                                          #
+#                     Tidying GDELT                        #
+#                                                          #
+############################################################
+
+
+# Gdelt1 <-  Create_Date(Gdelt1)
+# Gdelt1 <- Gdelt1 %>% 
+#   mutate(date = as.Date(paste0(year, '.', month, '.', 1), format = "%Y.%m.%d"))
+# Gdelt1$EventCode <- as.numeric(Gdelt1$EventCode)
+# Gdelt1 <- Event_Classifier(Gdelt1)
+# Gdelt1 <-  Gdelt_Keeper(Gdelt1)
+# Gdelt1 <- Gdelt1 %>% 
+#   filter(!is.na(ActionGeo_CountryCode) | ActionGeo_CountryCode !="") %>% 
+#   group_by(ActionGeo_CountryCode, year, month, EventClass)
+# Gdelt1 <-  Gdelt1 %>% 
+#   summarize(Num_events = n(),
+#             tone = mean(AvgTone),
+#             Goldstein = mean(GoldsteinScale)) %>% 
+#   arrange(ActionGeo_CountryCode, year, month)
+# dbWriteTable(con, "gdelt", 
+#              value = Gdelt1, append = TRUE, row.names = FALSE)
+# rm(Gdelt1)
 
 
 
@@ -71,7 +95,7 @@ Gdelt  <- Gdelt[!(is.na(Gdelt$ActionGeo_CountryCode) | Gdelt$ActionGeo_CountryCo
 
 Gdelt <- Gdelt %>% 
   filter(!is.na(ActionGeo_CountryCode) | ActionGeo_CountryCode !="") %>% 
-  group_by(ActionGeo_CountryCode, year, month)
+  group_by(ActionGeo_CountryCode, year, month, EventClass)
 
 Gdelt <-  Gdelt %>% 
   summarize(Num_events = n(),
@@ -121,6 +145,6 @@ wdi_secondary_male_enrollment <-  wdi_secondary_male_enrollment %>%
 
 unique(wdi_gdp_capita_2011c_country$countryName)
 
-# there are 214 unique countries in the dataset 
+# there are 215 unique countries in the dataset 
 
 

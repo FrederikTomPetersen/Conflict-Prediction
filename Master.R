@@ -10,6 +10,7 @@ cat("\014")
 DataCave = "C:/Users/Frederik/Documents/SpecialeData/"
 Private = "C:/Users/Frederik/Documents/SpecialeScripts/"
 GitHub = "C:/Users/Frederik/Documents/GitHub/Ethnic-Conflict-Prediction"
+Models = "C:/Users/Frederik/Documents/SpecialeModels/"
 
 
 
