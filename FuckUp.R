@@ -20,7 +20,7 @@ cat("\014")
 # Gdelt3 <- dbGetQuery(con, "SELECT * from gdelt2011")
 # Gdelt4 <- dbGetQuery(con, "SELECT * from gdelt2012")
 # Gdelt5 <- dbGetQuery(con, "SELECT * from gdelt2013")
-# Gdelt6 <- dbGetQuery(con, "SELECT * from gdelt2014")
+# Gdelt6 <- dbGetQuery(con, "SELECT * from gdelt_2014 LIMIT 100000")
 # Gdelt7 <- dbGetQuery(con, "SELECT * from gdelt2015")
 # Gdelt8 <- dbGetQuery(con, "SELECT * from gdelt2016")
 

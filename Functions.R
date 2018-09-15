@@ -116,8 +116,7 @@ Gdelt_getter3 = function(x, m) {
     Table <-  fread(Tablename)
     colnames(Table) <-  collist
     Table <- Table %>% 
-      filter(EventBaseCode %in% Eventtypes | EventCode %in% Eventtypes) %>% 
-      filter(Actor1CountryCode %in% Countries_List |Actor2CountryCode %in% Countries_List)
+      filter(EventBaseCode %in% Eventtypes | EventCode %in% Eventtypes) 
     Table <- Table[!(is.na(Table$Actor1CountryCode) | Table$Actor1CountryCode=="" | is.na(Table$Actor2CountryCode | Table$Actor2CountryCode==""))]
     
     #Gdelt_Data <- rbind(Gdelt_Data, Table)
@@ -233,6 +232,26 @@ Create_Date = function(x) {
            month = as.numeric(substring(MonthYear,5,6))) 
   return(output)
 }
+
+#####################################################################
+###                Appproximate or distance                       ###
+#####################################################################
+
+approximate_or_distance = function(x) {
+  x <-  x %>% 
+    mutate(AoD = 
+        if(x$QuadClass <= 2){
+           1
+            } else {
+           2
+           }
+    )
+  }
+
+
+
+
+
 #####################################################################
 ###                      Gdelt_Gdelt_Keeper                       ###
 #####################################################################
