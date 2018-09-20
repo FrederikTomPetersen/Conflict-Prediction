@@ -197,3 +197,18 @@ wdi_secondary_male_enrollment <- dbGetQuery(con, "SELECT * from wdi_secondary_ma
 rm( WDI_enrollment)
 
 
+
+##################################
+#            Countries           #
+##################################
+
+Countries <-  fread("Lande.csv")
+Countries_sub <- Countries %>% 
+  filter(continent %in% c("AS", "AF", "OC", "SA"))
+
+dbWriteTable(con, "countries",
+             value = Countries_sub, overwrite = TRUE, row.names = FALSE)
+
+
+
+

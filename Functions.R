@@ -249,12 +249,13 @@ approximate_or_distance = function(x) {
   }
 
 
-
+a <-  approximate_or_distance(Table)
 
 
 #####################################################################
 ###                      Gdelt_Gdelt_Keeper                       ###
 #####################################################################
+
 Gdelt_Keeper = function(x){
   output <- x
   vars_to_keep <- c("GLOBALEVENTID","year","month","Actor1Name","Actor1CountryCode","Actor2Name","Actor2CountryCode","EventCode","GoldsteinScale", "AvgTone", "NumMentions","NumArticles","ActionGeo_CountryCode","ActionGeo_CountryCode","year","month","date","EventClass")
@@ -264,6 +265,7 @@ Gdelt_Keeper = function(x){
 #####################################################################
 ###                    Gdelt_Gdelt_Tidier                         ###
 #####################################################################
+
 Gdelt_Tidier = function(x){
   output <- x
   output$EventCode <- as.numeric(output$EventCode)
@@ -278,6 +280,7 @@ Gdelt_Tidier = function(x){
 #####################################################################
 ###                    Gdelt_processor                         ###
 #####################################################################
+
 Gdelt_processor = function(x) {
   x <-  Create_Date(x)
   x <- x %>% 
@@ -298,7 +301,27 @@ Gdelt_processor = function(x) {
 }
 
 
+####################################################################
+###                         QUADCLASSER                          ###
+####################################################################
 
+QuadClasser = function(x){
+  x <-  x %>% 
+    mutate(q1nm = ifelse(QuadClass==1, NumMentions, 0),
+           q1at = ifelse(QuadClass==1, GoldsteinScale,0),
+           q1gs = ifelse(QuadClass==1, AvgTone,0),
+           q2nm = ifelse(QuadClass==2, NumMentions, 0),
+           q2at = ifelse(QuadClass==2, GoldsteinScale,0),
+           q2gs = ifelse(QuadClass==2, AvgTone,0),
+           q3nm = ifelse(QuadClass==3, NumMentions, 0),
+           q3at = ifelse(QuadClass==3, GoldsteinScale,0),
+           q3gs = ifelse(QuadClass==3, AvgTone,0),
+           q4nm = ifelse(QuadClass==4, NumMentions, 0),
+           q4at = ifelse(QuadClass==4, GoldsteinScale,0),
+           q4gs = ifelse(QuadClass==4, AvgTone,0)
+    )
+  return(x)
+}
 
 
 

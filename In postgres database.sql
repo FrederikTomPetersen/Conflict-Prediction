@@ -1,7 +1,7 @@
 
 
 -- Lav backup
-CREATE TABLE test_sql AS
+CREATE TABLE gdelt_y_m_d AS
 SELECT *
 	  FROM public.gdelt_y_m_d_full
 	  Limit 1000;
@@ -10,7 +10,7 @@ SELECT *
 SELECT COUNT("GLOBALEVENTID") FROM gdelt_y_m_d_full
 
 -- Lav testdata
-CREATE TABLE test_sql AS
+CREATE TABLE gdelt_y_m_d AS
 SELECT *
 	  FROM public.gdelt_y_m_d_full
 	  Limit 1000;
@@ -31,10 +31,13 @@ UPDATE public.gdelt_y_m_d_full
 	SET year = SUBSTRING("maanedaar", 1,4),
      month = SUBSTRING("maanedaar",5,2);
     
+-- lad os komme af med rapporter om voldelige begivenheder 	
+DELETE FROM public.gdelt_y_m_d
+	WHERE "EventCode" IN (145, 1451, 14521, 1454);
 	
 	
 -- Lav grupperet tabel	
- CREATE TABLE public.gdelt_y_m_d_full_group AS
+ CREATE TABLE public.gdelt_y_m_d_group AS
 	SELECT 
 		 "ActionGeo_CountryCode"
         ,"year"
@@ -43,11 +46,22 @@ UPDATE public.gdelt_y_m_d_full
         ,COUNT("NumMentions") as nummentions
 		,AVG("GoldsteinScale") as goldstein
 		,AVG("AvgTone") as AvgTone
-FROM public.gdelt_y_m_d_full 
+		,COUNT("q1nm") as q1nm
+		,AVG(cast(NULLIF("q1at", 0) AS BIGINT)) as q1at
+		,AVG(cast(NULLIF("q1gs", 0) AS BIGINT)) as q1gs
+		,COUNT("q1nm") as q1nm
+		,AVG(cast(NULLIF("q2at", 0) AS BIGINT)) as q2at
+		,AVG(cast(NULLIF("q2gs", 0) AS BIGINT)) as q2gs
+		,COUNT("q3nm") as q3nm
+		,AVG(cast(NULLIF("q3at", 0) AS BIGINT)) as q3at
+		,AVG(cast(NULLIF("q3gs", 0) AS BIGINT)) as q3gs
+		,COUNT("q4nm") as q4nm
+		,AVG(cast(NULLIF("q4at", 0) AS BIGINT)) as q4at
+		,AVG(cast(NULLIF("q4gs", 0) AS BIGINT)) as q4gs
+FROM public.gdelt_y_m_d 
 GROUP BY "ActionGeo_CountryCode"
 		  ,"year"
 		  ,"month"
-		  ,"QuadClass"
 ORDER BY "ActionGeo_CountryCode"
 			,"year"
             ,"month"
@@ -56,7 +70,7 @@ ORDER BY "ActionGeo_CountryCode"
 			
 			
 ------------------------------
-ALTER TABLE test_sql
+ALTER TABLE gdelt_y_m_d
 	ADD "q1nm" INTEGER 
 	,ADD "q1at" DECIMAL 
 	,ADD "q1gs" DECIMAL 
@@ -70,57 +84,57 @@ ALTER TABLE test_sql
 	,ADD "q4at" DECIMAL 
 	,ADD "q4gs" DECIMAL;
 			
-UPDATE test_sql
+UPDATE gdelt_y_m_d
 	SET "q1nm" = "NumMentions"
 	, "q1at" = "GoldsteinScale"
 	, "q1gs" = "AvgTone"
-WHERE QuadClass = 1;	
+WHERE "QuadClass" = 1;	
 			
-UPDATE test_sql
+UPDATE gdelt_y_m_d
 	SET "q2nm" = "NumMentions"
 	, "q2at" = "GoldsteinScale"
 	, "q2gs" = "AvgTone"
-WHERE QuadClass = 2				
+WHERE "QuadClass" = 2				
 			
-UPDATE test_sql
+UPDATE gdelt_y_m_d
 	SET "q3nm" = "NumMentions"
 	, "q3at" = "GoldsteinScale"
 	, "q3gs" = "AvgTone"
-WHERE QuadClass = 3				
+WHERE "QuadClass" = 3				
 						
-UPDATE test_sql
+UPDATE gdelt_y_m_d
 	SET "q4nm" = "NumMentions"
 	, "q4at" = "GoldsteinScale"
 	, "q4gs" = "AvgTone"
-WHERE QuadClass = 4			
+WHERE "QuadClass" = 4			
 
 
-UPDATE test_sql
+UPDATE gdelt_y_m_d
 SET "q1nm" = 0 WHERE q1nm IS NULL; 
-UPDATE test_sql
+UPDATE gdelt_y_m_d
 SET "q1at" = 0 WHERE q1at IS NULL;
-UPDATE test_sql
+UPDATE gdelt_y_m_d
 SET "q1gs" = 0 WHERE q1gs IS NULL;
 
 
-UPDATE test_sql
+UPDATE gdelt_y_m_d
 SET "q2nm" = 0 WHERE q2nm IS NULL; 
-UPDATE test_sql
+UPDATE gdelt_y_m_d
 SET "q2at" = 0 WHERE q2at IS NULL;
-UPDATE test_sql
+UPDATE gdelt_y_m_d
 SET "q2gs" = 0 WHERE q2gs IS NULL;
 
-UPDATE test_sql
+UPDATE gdelt_y_m_d
 SET "q3nm" = 0 WHERE q3nm IS NULL; 
-UPDATE test_sql
+UPDATE gdelt_y_m_d
 SET "q3at" = 0 WHERE q3at IS NULL;
-UPDATE test_sql
+UPDATE gdelt_y_m_d
 SET "q3gs" = 0 WHERE q3gs IS NULL;
 
-UPDATE test_sql
+UPDATE gdelt_y_m_d
 SET "q4nm" = 0 WHERE q4nm IS NULL; 
-UPDATE test_sql
+UPDATE gdelt_y_m_d
 SET "q4at" = 0 WHERE q4at IS NULL;
-UPDATE test_sql
+UPDATE gdelt_y_m_d
 SET "q4gs" = 0 WHERE q4gs IS NULL;
 			

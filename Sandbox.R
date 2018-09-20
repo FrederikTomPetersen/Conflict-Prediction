@@ -44,15 +44,6 @@ cat("\014")
 
 
 
-
-
-
-a <- approximate_or_distance(Gdelt6)
-
-
-
-
-
 #####################################################################
 ###                         simple plotting                       ###
 #####################################################################
@@ -76,7 +67,6 @@ scale_fill_gradient2(
 ###                   Getting Climate Data                        ###
 #####################################################################
 
-?get_model_temp
 
 country_temp <- get_model_temp(Country_2l,"mavg", 1980, 2010)[1:5]
 country_perception <- get_model_precip(Country_2l,"mavg", 1980, 2010)
@@ -84,12 +74,6 @@ country_perception <- get_model_precip(Country_2l,"mavg", 1980, 2010)
 USA_temp <- get_model_temp("USA","mavg", 1980, 2010)
 
 temp_stats <- get_ensemble_stats(Country_2l, "mavg", ppt_days)
-
-
-
-
-
-
 
 
 #####################################################################
@@ -131,9 +115,7 @@ Gdelt_sort <-  df_postgres %>%
   mutate(year = as.numeric(substring(MonthYear,1,4)),
          month = as.numeric(substring(MonthYear,5,6)))
 
-
 Gdelt_sort  <- Gdelt_sort[!(is.na(Gdelt_sort$ActionGeo_CountryCode) | Gdelt_sort$ActionGeo_CountryCode==""), ]
-
 
 Gdelt_sort <- Gdelt_sort %>% 
   filter(!is.na(ActionGeo_CountryCode) | ActionGeo_CountryCode !="") %>% 
@@ -146,16 +128,9 @@ Gdelt_count <-  Gdelt_sort %>%
   arrange(ActionGeo_CountryCode, year, month)
 
 
-
-
-
 Gdelt1 <- gdelt_tidier(Gdelt1) %>% 
   mutate(date = as.Date(paste0(year, '.', month, '.', 1), format = "%Y.%m.%d"))
 Gdelt1 <-  Gdelt_Keeper(Gdelt1)
-
-
-
-
 
 
 
@@ -171,9 +146,6 @@ Gdelt %>%
   geom_line() 
 
 
-
-
-
 range(Gdelt$tone)
 
 a <- Gdelt %>% 
@@ -183,11 +155,7 @@ range(a$tone)
 
 #####Getting the countries right #############
 
-#load in of countries
-Countries <-  fread("Lande.csv")
-Africa = Countries #%>% 
-#  filter(continent == "AF")
-#Africa_code <-  Africa$countryName
+
 
 #Tolower
 Africa$countryName <-  tolower(Africa$countryName)
@@ -207,12 +175,8 @@ Gdelt_sub <-  Gdelt_count %>%
 Gdelt_sub <-  Gdelt_sub %>% 
   left_join(Africa, by = c("ActionGeo_CountryCode" = "countryCode"))
 
-
 # Gdelt_sub <-  Gdelt_count %>% 
 #   filter(ActionGeo_CountryCode %in% Africa_code)
-
-
-
 
 
 #Jitterplot  
@@ -251,3 +215,127 @@ arrange(ActionGeo_CountryCode, date) %>%
   ggplot() +
   geom_line(aes(x = date, y = tone, color = ActionGeo_CountryCode)) +
   geom_line(aes(x = date, y = TotalDeaths, color = TotalDeaths))
+
+
+
+
+
+
+
+
+
+
+
+
+###############################################################################3
+#Quading it up()
+
+
+Quady = function(x) {
+  x <-  x %>% 
+  if(QuadClass = 1) {
+    
+
+    
+QuadClasser = function(x){
+    x <-  x %>% 
+    mutate(q1nm = ifelse(QuadClass==1, NumMentions, 0),
+           q1at = ifelse(QuadClass==1, GoldsteinScale,0),
+           q1gs = ifelse(QuadClass==1, AvgTone,0),
+           q2nm = ifelse(QuadClass==2, NumMentions, 0),
+           q2at = ifelse(QuadClass==2, GoldsteinScale,0),
+           q2gs = ifelse(QuadClass==2, AvgTone,0),
+           q3nm = ifelse(QuadClass==3, NumMentions, 0),
+           q3at = ifelse(QuadClass==3, GoldsteinScale,0),
+           q3gs = ifelse(QuadClass==3, AvgTone,0),
+           q4nm = ifelse(QuadClass==4, NumMentions, 0),
+           q4at = ifelse(QuadClass==4, GoldsteinScale,0),
+           q4gs = ifelse(QuadClass==4, AvgTone,0)
+           )
+return(x)
+}
+b <- QuadClasser(Table)  
+    
+
+
+QuadClasser = function(x,y) {
+x <- x %>% 
+  if(y == 1) {
+    mutate(q1nm = x$NumMentions,
+           q1at = x$GoldsteinScale,
+           q1gs = x$AvgTone)
+  } else if (y == 2) {
+    mutate(q2nm = x$NumMentions,
+           q2at = x$GoldsteinScale,
+           q2gs = x$AvgTone)
+  } else if (y == 3){
+    mutate(q3nm = x$NumMentions,
+           q3at = x$GoldsteinScale,
+           q3gs = x$AvgTone)
+  } else if (y == 4){
+    mutate(q4nm = x$NumMentions,
+           q4at = x$GoldsteinScale,
+           q4gs = x$AvgTone)
+  } 
+}  
+  
+q1 = function(x){
+  x <- x %>% 
+    filter(QuadClass == 1) %>% 
+    mutate(q1nm = coalesce(x$NumMentions,0),
+           q1at = coalesce(x$GoldsteinScale, 0),
+           q1gs = coalesce(x$AvgTone, 0))
+return(x)  
+}
+  
+  
+  a <-  q1(Table)
+  
+  
+  
+  
+
+
+
+
+
+ if(QuadClass = 1) {
+  mutate(q1nm = x$NumMentions,
+        q1at = x$GoldsteinScale,
+        q1gs = x$AvgTone)
+} else if (QuadClass = 2) {
+  mutate(q2nm = x$NumMentions,
+         q2at = x$GoldsteinScale,
+         q2gs = x$AvgTone)
+} else if (QuadClass = 3){
+  mutate(q3nm = x$NumMentions,
+         q3at = x$GoldsteinScale,
+         q3gs = x$AvgTone)
+} else if (QuadClass == 4){
+  mutate(q4nm = x$NumMentions,
+         q4at = x$GoldsteinScale,
+         q4gs = x$AvgTone)
+} 
+}
+
+
+
+
+
+
+
+
+approximate_or_distance = function(x) {
+  x <-  x %>% 
+    mutate(AoD = 
+             if(x$QuadClass <= 2){
+               1
+             } else {
+               2
+             }
+    )
+}
+
+
+
+
