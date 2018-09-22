@@ -339,3 +339,115 @@ approximate_or_distance = function(x) {
 
 
 
+###################################################
+
+QuadClasser2 = function(x){
+  x <-  x %>% 
+    mutate(
+           q1nm = ifelse(QuadClass==1, NumMentions, 0),
+           q1at = ifelse(QuadClass==1, GoldsteinScale,0),
+           q1gs = ifelse(QuadClass==1, AvgTone,0)) %>%
+      filter(QuadClass == 1)
+  return(x)
+  x <-  x %>%      
+     mutate(      
+           q2nm = ifelse(QuadClass==2, NumMentions, 0),
+           q2at = ifelse(QuadClass==2, GoldsteinScale,0),
+           q2gs = ifelse(QuadClass==2, AvgTone,0)) %>% 
+       filter(QuadClass == 1)
+  return(x)
+  x <-  x %>%     
+      mutate(     
+           q3nm = ifelse(QuadClass==3, NumMentions, 0),
+           q3at = ifelse(QuadClass==3, GoldsteinScale,0),
+           q3gs = ifelse(QuadClass==3, AvgTone,0)) %>% 
+        filter(QuadClass == 3)
+  return(x)
+  x <-  x %>%
+      mutate(
+           q4nm = ifelse(QuadClass==4, NumMentions, 0),
+           q4at = ifelse(QuadClass==4, GoldsteinScale,0),
+           q4gs = ifelse(QuadClass==4, AvgTone,0)) %>% 
+        filter(QuadClass == 4)
+  return(x)
+}
+
+
+
+
+QuadClasser = function(x){
+  x <-  x %>% 
+    mutate(q1nm = ifelse(QuadClass==1, NumMentions, 0),
+           q1at = ifelse(QuadClass==1, GoldsteinScale,0),
+           q1gs = ifelse(QuadClass==1, AvgTone,0),
+           q2nm = ifelse(QuadClass==2, NumMentions, 0),
+           q2at = ifelse(QuadClass==2, GoldsteinScale,0),
+           q2gs = ifelse(QuadClass==2, AvgTone,0),
+           q3nm = ifelse(QuadClass==3, NumMentions, 0),
+           q3at = ifelse(QuadClass==3, GoldsteinScale,0),
+           q3gs = ifelse(QuadClass==3, AvgTone,0),
+           q4nm = ifelse(QuadClass==4, NumMentions, 0),
+           q4at = ifelse(QuadClass==4, GoldsteinScale,0),
+           q4gs = ifelse(QuadClass==4, AvgTone,0)
+    )
+  return(x)
+}
+
+
+
+QuadClasser = function(x){
+  x <-  x %>% 
+    mutate_if(QuadClass==1,  q1nm = ifelse(QuadClass==1, NumMentions, 0),
+           q1at = ifelse(QuadClass==1, GoldsteinScale[],0),
+           q1gs = ifelse(QuadClass==1, AvgTone,0),
+           q2nm = ifelse(QuadClass==2, NumMentions, 0),
+           q2at = ifelse(QuadClass==2, GoldsteinScale,0),
+           q2gs = ifelse(QuadClass==2, AvgTone,0),
+           q3nm = ifelse(QuadClass==3, NumMentions, 0),
+           q3at = ifelse(QuadClass==3, GoldsteinScale,0),
+           q3gs = ifelse(QuadClass==3, AvgTone,0),
+           q4nm = ifelse(QuadClass==4, NumMentions, 0),
+           q4at = ifelse(QuadClass==4, GoldsteinScale,0),
+           q4gs = ifelse(QuadClass==4, AvgTone,0)
+    )
+  return(x)
+}
+
+
+a <- Table %>% 
+  mutate_if(Table.QuadClass==1, 
+            q1nm = ifelse(QuadClass==1, NumMentions, 0),
+            q1at = ifelse(QuadClass==1, GoldsteinScale,0),
+            q1gs = ifelse(QuadClass==1, AvgTone,0))
+
+
+
+
+a <- Table %>% 
+  mutate(   q1nm = ifelse(QuadClass==1, NumMentions[which(Table$QuadClass == 1)], 0),
+            q1at = ifelse(QuadClass==1, GoldsteinScale[which(Table$QuadClass == 1)],0),
+            q1gs = ifelse(QuadClass==1, AvgTone[which(Table$QuadClass == 1)],0))
+
+
+
+install.packages("sqldf")
+library("sqldf")
+
+
+just don't use "where," it is not needed. the bigger picture is that you need subset methods which r has in spades: subset,[,[[,$'
+Selecting Observations
+# first 5 observations
+newdata <- mydata[1:5,]
+
+# based on variable values
+newdata <- mydata[ which(mydata$gender=='F' 
+                         & mydata$age > 65), ]
+
+# or
+attach(mydata)
+newdata <- mydata[ which(gender=='F' & age > 65),]
+detach(mydata)
+
+
+
+

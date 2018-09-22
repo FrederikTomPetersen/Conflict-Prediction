@@ -45,7 +45,6 @@ source("DataProducts.R")
 
 
 #####Data_reloader#####
-#Congrats - you effectevily fucked up your main dataset -to obtain it again simple load it with the FuckUp.R script
-
+#Congrats - you effectively fucked up your main dataset -to obtain it again simple load it with the FuckUp.R script
 Setwd(GitHub)
 source("FuckUp.R")

@@ -39,17 +39,16 @@ DELETE FROM public.gdelt_y_m_d
 -- Lav grupperet tabel	
  CREATE TABLE public.gdelt_y_m_d_group AS
 	SELECT 
-		 "ActionGeo_CountryCode"
+		 "ActionGeo_CountryCode" as Country
         ,"year"
         ,"month"
-        ,"QuadClass"
         ,COUNT("NumMentions") as nummentions
 		,AVG("GoldsteinScale") as goldstein
 		,AVG("AvgTone") as AvgTone
 		,COUNT("q1nm") as q1nm
 		,AVG(cast(NULLIF("q1at", 0) AS BIGINT)) as q1at
 		,AVG(cast(NULLIF("q1gs", 0) AS BIGINT)) as q1gs
-		,COUNT("q1nm") as q1nm
+		,COUNT("q2nm") as q2nm
 		,AVG(cast(NULLIF("q2at", 0) AS BIGINT)) as q2at
 		,AVG(cast(NULLIF("q2gs", 0) AS BIGINT)) as q2gs
 		,COUNT("q3nm") as q3nm

@@ -18,6 +18,13 @@ cat("\014")
 
 GED_disaggregated <- dbGetQuery(con, "SELECT * from ged")
 
+Gdelt <-  dbGetQuery(con, "SELECT * from gdelt_y_m_d_group")
+
+
+
+
+
+
 wdi_gdp_capita_2011c_country <- dbGetQuery(con, "SELECT * from wdi_gdp")
 wdi_gov_expenditure <- dbGetQuery(con, "SELECT * from wdi_gov_expenditure")
 wdi_gov_debt <- dbGetQuery(con, "SELECT * from wdi_gov_debt")
