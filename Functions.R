@@ -10,14 +10,14 @@ cat("\014")
 
 
 ###################################################################
-#                          Gdelt_getter                           #
+#                      Gdelt_getter 1                            #
 ###################################################################
 # This functions automates the proces for downloading and appending the GDELT dataset
 # The function takes the argument x and m 
 # x must be a list URL containing the direct link to 
 
 
-Gdelt_getter = function(x, m) {
+Gdelt_getter_1 = function(x, m) {
   #x = liste af url'er
   #m = startåret 
   for (i in x){
@@ -50,14 +50,14 @@ Gdelt_getter = function(x, m) {
 
 
 ###################################################################
-#                          Gdelt_getter2                           #
+#                          Gdelt_getter 2                           #
 ###################################################################
 # This functions automates the proces for downloading and appending the GDELT dataset - aim for the year month urls
 # The function takes the argument x and m 
 # x must be a list URL containing the direct link to 
 
 
-Gdelt_getter2 = function(x, m) {
+Gdelt_getter_2 = function(x, m) {
   #x = liste af url'er
   #m = startåret 
   for (i in x){
@@ -100,9 +100,7 @@ Gdelt_getter2 = function(x, m) {
 # Iterations_left =Iterations
 # Event_y_m_d <- Event_url_list[116:2085]
 
-
-
-Gdelt_getter3 = function(x, m) {
+Gdelt_getter_3 = function(x, m) {
   #x = liste af url'er
   #m = startåret 
   for (i in x){
@@ -116,30 +114,30 @@ Gdelt_getter3 = function(x, m) {
     Table <-  fread(Tablename)
     colnames(Table) <-  collist
     Table <- Table %>% 
-      filter(EventBaseCode %in% Eventtypes | EventCode %in% Eventtypes) 
-    Table <- Table[!(is.na(Table$Actor1CountryCode) | Table$Actor1CountryCode=="" | is.na(Table$Actor2CountryCode | Table$Actor2CountryCode==""))]
+      filter(EventCode %in% 1:2050,
+             ActionGeo_CountryCode %in% Countries_sub$countryCode)  %>% 
+      select(myvars)
+    Table <- Table %>%  
+      mutate(year = as.numeric(substring(MonthYear,1,4)),
+             month = as.numeric(substring(MonthYear,5,6)))
+    Table <- QuadClasser(Table)
     
     #Gdelt_Data <- rbind(Gdelt_Data, Table)
-    dbWriteTable(con, "gdelt_y_m_d123", 
+    dbWriteTable(con, "gdelt_y_m_d", 
                  value = Table, append = TRUE, row.names = FALSE)
     rm(Table)
     unlink(Basefile)
     unlink(paste0(Basename,".export.csv"))
     print(paste("der er", length(x)-m, " tilbage af", length(x), "iterationer"))
-    Iterations_left = Iterations_left-1
-    print(paste("Række nummer", m))
+    print(paste("Dette er download række nummer", m))
     m = m + 1
-    Sys.time()
-    Sys.sleep(10)
-    
-    
+    print(Sys.time())
+    Sys.sleep(2)
   }
-  return(Gdelt_Data)
 }
 
 
-#Gdelt_getter3(Event_y_m_d,1279)
-# Række nummer 1278
+
 
 ###################################################################
 #       Goverment detection (only disaggregated GED data)         #
@@ -159,6 +157,45 @@ GovDetect = function(df){
   rm(lista, listb)
 }
 
+
+
+#################################################
+#         GED tidy function Functions           #
+
+
+#group and summarize functions
+Ged_Group = function(x){
+  x <- x %>% 
+    group_by(country,year,month)
+  return(x)  
+}
+
+Total_Deaths = function(x) {
+  x <- x
+  for(i in x) {
+    x <- x %>% 
+      mutate(total_deaths = sum(x$deaths_a[i] + x$deaths_b[i] + x$deaths_civ[i] + x$deaths_unk[i])) 
+  }
+  return(x)
+}
+
+
+# nåske noget i stil med dette i for loopet conflicts_all <-  conflicts_all[, deaths_running_year := cumsum(deaths_a +deaths_b + deaths_civ + deaths_unk), by=list(country, year)] 
+
+
+
+Ged_Sum = function(x){
+  x <- x %>% 
+    summarize(total_deaths = sum(deaths_a+deaths_b+deaths_civ+deaths_unk),
+              civilians_deaths = sum(deaths_civ),
+              conflict_incidents = n(),
+              cw=mean(civilwar),
+              cw_m=mean(civilwar_month),
+              cw_m_contribute=mean(cw_month_contribute)) %>% 
+    arrange(country, year, month)
+}
+
+#################################################
 
 
 

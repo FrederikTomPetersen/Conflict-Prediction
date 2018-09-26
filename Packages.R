@@ -7,24 +7,15 @@ cat("\014")
 
 #Installation af pakker og hentning af relvante pakker 
 
-
-
 # devtools::install_github("hadley/devtools")
 # devtools::install_github("hadley/dplyr")
 # devtools::install_github("hafen/trelliscopejs")
 # devtools::install_github("abresler/gdeltr2")
 #devtools::install_github("ropensci/rWBclimate")
 
-
-# Packages <- c("devtools",
-#               "dplyr",
-#               "caret",
-#               "sf",
-#               "trelliscopejs",
-#               "gdeltr2")
-# 
-# 
-# lapply(Packages, library, character.only = TRUE)
+#States
+library("states")
+library("countrycode")
 
 #ggdelt and posgres
 library("devtools")

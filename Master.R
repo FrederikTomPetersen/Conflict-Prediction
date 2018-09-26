@@ -27,10 +27,8 @@ source("Packages.R")
 
 source("Functions.R")
 
-setwd(Private)
 source("PostGres_connect.R")
 
-setwd(GitHub)
 source("DataLoad.R")
 
 source("DataTidy.R")

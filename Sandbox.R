@@ -451,3 +451,30 @@ detach(mydata)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#Running numbers
+conflict <- conflict %>%  
+  arrange(country,year,month)
+conflict <-  data.table(conflict)
+conflict <-  conflict[, deaths_running_year := cumsum(total_deaths), by=list(country, year)] 
+conflict <-  conflict[, deaths_running_months := cumsum(total_deaths), by=list(country, year, month)]
+
+conflicts <- conflict
+rm(conflict)
+
+

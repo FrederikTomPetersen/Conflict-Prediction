@@ -6,64 +6,77 @@ cat("\014")
 ###                                                                ###
 ###################################################################### 
 
-#merging gdelt Frames
+# I mit conflict datasæt har jeg country (navn), country_id(p4n)
 
-# Gdelt <-  rbind(Gdelt1, Gdelt2, Gdelt3, Gdelt4,Gdelt5, Gdelt6, Gdelt7, Gdelt8)
+# I states har jeg iso3c, gwcode
 
-
-# Expanding
-GED_disaggregated <-  GED_disaggregated %>% 
-  group_by(country) %>% 
-  expand(year= 2000:2017, month = 1:12) %>% 
-  left_join(GED_disaggregated) %>% 
-  arrange(country, year, month)
-
-# #joining on country codes'
-setwd(DataCave)
-Countries <-  fread("Lande.csv")
-Countries$countryName <-  tolower(Countries$countryName)
-GED_disaggregated$country <- tolower(GED_disaggregated$country)
-GED_disaggregated <- GED_disaggregated %>%
-  left_join(Countries, by = c("country" = "countryName"), copy =T)
+# I Gdelt har jeg fips
 
 
-#Joining GED & GDELT
-Samlet <- GED_disaggregated %>% 
-  left_join(Gdelt, by = c("year" = "year", "month" = "month", "countryCode" = "ActionGeo_CountryCode"))
+#Creating a base country year month structure
+CountryCodelistPanel <-  codelist_panel %>% 
+  select(country.name.en,iso3c, p4n, fips) %>% 
+  filter(!is.na(p4n), !is.na(iso3c), !is.na(fips))
+
+CountryCodelistPanel <-  unique(CountryCodelistPanel)
+CountryCodelistPanel <- CountryCodelistPanel
+
+StatesBase <-  CountryCodelistPanel %>% 
+  group_by(country.name.en, iso3c,p4n,fips) %>% 
+  expand(year= 2000:2017, month = 1:12) # giver en tabel med 36936 country-months
+rm(CountryCodelistPanel)
 
 
-# Den ekspander kun indenfor de måneder og år der er tilstede i datasættet ! 
-# Går fra 37502 observation til 65027
-# Det svarer vel til at jeg har et omtrent 50% tomt datasæt
-
-#Jeg bør vel også expande mit grunddataset til at omfatte den givne periode inden jeg begynder at joine data på. 
 
 
+# joining conflicts to dateset
+DataSet <- StatesBase %>% 
+  left_join(GedAggregated, by = c("p4n" = "country_id", "year" = "year", "month" = "month"))
+rm(StatesBase,GedAggregated)
+
+
+# joining gdelt to dataset
+DataSet <-  DataSet %>% 
+  left_join(GdeltGroup, by = c("fips"= "country", "year"="year", "month"="month")) 
+rm(GdeltGroup)
 
 #Samling a WDI i en dataframe
-WDI_samlet <-  wdi_gdp_capita_2011c_country %>% 
-  left_join(wdi_gov_debt, by = c("countryName"="countryName", "year" = "year")) %>% 
-  left_join(wdi_gov_expenditure, by = c("countryName"="countryName", "year" = "year")) %>% 
-  left_join(wdi_secondary_male_enrollment, by = c("countryName"="countryName", "year" = "year")) %>% 
-  transmute(countryName, isoalpha3 =isoAlpha3.x, iso2c =iso2c.x, year, gov_debt = GC.DOD.TOTL.GD.ZS, gov_expenditure =NE.DAB.TOTL.ZS, secondary_male_enrollment= SE.SEC.NENR.MA, gdp_pr_capita = NY.GDP.PCAP.PP.KD) %>% 
-  filter(year >= 2000 ) %>% 
-  arrange(countryName, year)
+
+DataSet<-  DataSet %>% 
+  left_join(WDI, by = c("iso3c" ="isoalpha3", "year" = "year"))
+rm(WDI)
 
 
-lets_reg_it<-  Samlet %>% 
-  full_join(WDI_samlet, by = c("isoAlpha3" ="isoalpha3", "year" = "year"))
+#Data type fixer
+DataSet$conflict_incidents <- as.numeric(DataSet$conflict_incidents)
+
+#fixing the NA <- 0
+DataSet <- DataSet %>% mutate(total_deaths_month = coalesce(total_deaths_month,0))
+DataSet <- DataSet %>% mutate(nummentions = coalesce(nummentions,0))
+DataSet <- DataSet %>% mutate(conflict_incidents = coalesce(conflict_incidents,0))
+DataSet <- DataSet %>% mutate(total_deaths_year = coalesce(total_deaths_year,0))
+DataSet <- DataSet %>% mutate(civilwar = coalesce(civilwar,0))
+DataSet <- DataSet %>% mutate(civilwar_month = coalesce(civilwar_month,0))
+DataSet <- DataSet %>% mutate(cw_month_contribute = coalesce(cw_month_contribute,0))
+DataSet <- DataSet %>% mutate(goldstein = coalesce(goldstein,0))
+DataSet <- DataSet %>% mutate(avgtone = coalesce(avgtone,0))
+DataSet <- DataSet %>% mutate(q1nm = coalesce(q1nm,0))
+DataSet <- DataSet %>% mutate(q1gs = coalesce(q1gs,0))
+DataSet <- DataSet %>% mutate(q1at = coalesce(q1at,0))
+DataSet <- DataSet %>% mutate(q2nm = coalesce(q2nm,0))
+DataSet <- DataSet %>% mutate(q2gs = coalesce(q2gs,0))
+DataSet <- DataSet %>% mutate(q2at = coalesce(q2at,0))
+DataSet <- DataSet %>% mutate(q3nm = coalesce(q3nm,0))
+DataSet <- DataSet %>% mutate(q3gs = coalesce(q3gs,0))
+DataSet <- DataSet %>% mutate(q3at = coalesce(q3at,0))
+DataSet <- DataSet %>% mutate(q4nm = coalesce(q4nm,0))
+DataSet <- DataSet %>% mutate(q4gs = coalesce(q4gs,0))
+DataSet <- DataSet %>% mutate(q4at = coalesce(q4at,0))
 
 
-df <- Samlet
 
-
-# managing missing values 
-df <- df %>% mutate(TotalDeaths = coalesce(TotalDeaths, 0))
-df <- df %>% mutate(Incidents = coalesce(Incidents, 0))
-df <- df %>% mutate(Num_events = coalesce(Num_events, 0))
-df <- df %>% mutate(tone = coalesce(tone, 0))
-df <- df %>% mutate(Goldstein = coalesce(Goldstein, 0))
-
+DataSet_sub <- DataSet %>%  
+  filter(year >= 2013)
 
 
 

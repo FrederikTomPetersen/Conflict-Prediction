@@ -52,26 +52,6 @@ Africa_List <-  Africa$isoAlpha3
 Eventtypes <-  readRDS("C:/Users/Frederik/Documents/GitHub/Ethnic-Conflict-Prediction/Data/EventCodes.rds")
 Eventtypes <- as.numeric(c("1031","1032","1033","1034","104","1041","1042","1043","1044","105","1051","1052","1053","1054","1055","1056","106","107","108","110","111","112","1121","1122","1123","1124","1125","113","114","115","116","120","121","1211","1212","122","122","1222","1223","1224","123","1231","1232","1233","1234","124","1241","1242","1243","124","1245","1246","125","126","127","128","129","130","131","1311","1312","1313","132","1321","1322","1323","1324","133","134","135","136","137","138","1381","1382","1383","1384","1385","139","140","141","1411","1412","1413","1414","142","1421","1422","1423","1424","143","1431","1432","1433","1434","144","1441","1442","1443","1444","145","150","151","152","153","154","155","160","161","162","1621","1622","1623","163","164","165","166","1661","1662","1663","170","171","1711","1712","172","1721","1722","1723","1724","173","174","175","176","181","1821","191","192"))
 
-
-
-###Creating and empty df where Gdelt_getter output can be stored in
-Event <- Event_url_list[2000]
-Basefile <- basename(Event)
-Basename <- substring(Basefile,1,4)
-download.file(Event, Basefile)
-unzip(Basefile)
-Tablename <- paste0(Basename,".csv")
-Table <-  fread(Tablename)
-colnames(Table) <-  collist
-range(Table$)
-Gdelt_Data <- Table %>% 
-  filter(Actor1CountryCode %in% Countries_List |Actor2CountryCode %in% Countries_List) %>% 
-  filter(EventCode %in% Eventtypes)
-Gdelt_Data <-  Gdelt_Data[0,]
-colnames(Gdelt_Data) <- collist
-rm(Table, Gdelt_header, Countries, Event)
-
-
 Output <-  Gdelt_getter(Event_1979_2005, 1)
 
 ### wrrting to postgres
@@ -98,27 +78,21 @@ rm(All_eventdb_url, Output,Gdelt_Data, Iterations, Tablename, Iterations_left,co
 
 
 setwd(DataCave)
-direct_link <-  "http://ucdp.uu.se/downloads/ged/ged181-RData.zip"
+direct_link <-  "http://ucdp.uu.se/downloads/ged/ged181-shp.zip"
 download.file(direct_link, basename(direct_link))
 unzip(basename(direct_link))
-load("~/SpecialeData/ged181.RData")
 
-GED_disaggregated <-  ged181
+ged181 <-  sf::read_sf("ged181.shp", crs = 4326) %>% 
+    select(country, reagion, country_id,year,deaths_a,deaths_b, deaths_civ, deaths_unk,date_start,date_end,gwnob)
+  
+ged_disaggregated <-  ged181
 rm(ged181)
 rm(direct_link)
-
-unlink("ged181-RData.zip")
-
+unlink("ged181-shp.zip")
 
 #Writing to postgres
-
-dbWriteTable(con, "ged", 
-             value = GED_disaggregated, overwrite = TRUE, row.names = FALSE)
-
-# query the data from postgreSQL 
-GED_disaggregated <- dbGetQuery(con, "SELECT * from ged")
-
-
+dbWriteTable(con, "ged_disaggregated", 
+             value = ged_disaggregated, overwrite = TRUE, row.names = FALSE)
 
 
 
@@ -140,7 +114,7 @@ GED_disaggregated <- dbGetQuery(con, "SELECT * from ged")
 
 #GDP pr capita 2011 constant
 WDIsearch('gdp.*capita.*constant')
-GDP_capita_2011c_country = WDI(indicator='NY.GDP.PCAP.PP.KD', start=1960, end=2017, extra=T, country = 'all')
+GDP_capita_2011c_country = WDI(indicator='NY.GDP.PCAP.PP.KD', start=2000, end=2017, extra=T, country = 'all')
 
 dbWriteTable(con, "wdi_gdp", 
              value = GDP_capita_2011c_country, overwrite = TRUE, row.names = FALSE)
@@ -156,7 +130,7 @@ rm(GDP_capita_2011c_country)
 #####################################
 
 WDIsearch('expenditure')
-gov_expenditure =  WDI(indicator ='NE.DAB.TOTL.ZS', start=1960, end=2017, extra=T, country = 'all')   #Expenditure, total (% of GDP)
+gov_expenditure =  WDI(indicator ='NE.DAB.TOTL.ZS', start=2000, end=2017, extra=T, country = 'all')   #Expenditure, total (% of GDP)
 
 dbWriteTable(con, "wdi_gov_expenditure", 
              value = gov_expenditure, overwrite = TRUE, row.names = FALSE)
@@ -172,7 +146,7 @@ rm( gov_expenditure)
 ####       Goverment debt         ###
 #####################################
 WDIsearch('debt')
-GOV_debt <-  WDI(indicator = 'GC.DOD.TOTL.GD.ZS', start=1960, end=2017, extra=T, country = 'all')   # Central government debt, total (% of GDP)
+GOV_debt <-  WDI(indicator = 'GC.DOD.TOTL.GD.ZS', start=2000, end=2017, extra=T, country = 'all')   # Central government debt, total (% of GDP)
 
 dbWriteTable(con, "wdi_gov_debt", 
              value = GOV_debt, overwrite = TRUE, row.names = FALSE)
@@ -187,7 +161,7 @@ rm(GOV_debt)
 # secondary male school enrollment  #
 #####################################
 WDIsearch('enrollment')
-WDI_enrollment <- WDI(indicator ="SE.SEC.NENR.MA", start=1960, end=2017, extra=T, country = 'all') #School enrollment, secondary, male (% net)
+WDI_enrollment <- WDI(indicator ="SE.SEC.NENR.MA", start=2000, end=2017, extra=T, country = 'all') #School enrollment, secondary, male (% net)
 
 dbWriteTable(con, "wdi_secondary_male_enrollment", 
              value = WDI_enrollment, overwrite = TRUE, row.names = FALSE)
@@ -201,13 +175,10 @@ rm( WDI_enrollment)
 ##################################
 #            Countries           #
 ##################################
-
+setwd(DataCave)
 Countries <-  fread("Lande.csv")
-Countries_sub <- Countries %>% 
-  filter(continent %in% c("AS", "AF", "OC", "SA"))
-
 dbWriteTable(con, "countries",
-             value = Countries_sub, overwrite = TRUE, row.names = FALSE)
+             value = Countries, overwrite = TRUE, row.names = FALSE)
 
 
 

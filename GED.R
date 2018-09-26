@@ -1,54 +1,7 @@
 
-#################################################
-#                   Functions
 
 
-#group and summarize functions
-Ged_Group = function(x){
-  x <- x %>% 
-    group_by(country,year,month)
-  return(x)  
-}
-
-Total_Deaths = function(x) {
-  x <- x
-  for(i in x) {
-    x <- x %>% 
-    mutate(total_deaths = sum(x$deaths_a[i] + x$deaths_b[i], x$deaths_civ[i], x$deaths_unk[i])) 
-  }
-  return(x)
-}
-
-
-# nåske noget i stil med dette i for loopet conflicts_all <-  conflicts_all[, deaths_running_year := cumsum(deaths_a +deaths_b + deaths_civ + deaths_unk), by=list(country, year)] 
-
-
-
-Ged_Sum = function(x){
-  x <- x %>% 
-    summarize(total_deaths = sum(deaths_a+deaths_b+deaths_civ+deaths_unk),
-              civilians_deaths = sum(deaths_civ),
-              conflict_incidents = n(),
-              cw=mean(civilwar),
-              cw_m=mean(civilwar_month),
-              cw_m_contribute=mean(cw_month_contribute)) %>% 
-    arrange(country, year, month)
-}
-
-#################################################
-
-
-
-
-workspace ="C:/Users/ftp/Desktop/Speciale/" 
-gis = "C:/Users/ftp/Desktop/Speciale/gis/"
-
-#crs = 4326 for world
-setwd(gis)
-conflicts_all <-  sf::read_sf("ged181.shp", crs = 4326) %>% 
-  select(country,year,deaths_a,deaths_b, deaths_civ, deaths_unk,date_start,date_end,gwnob)
-
-
+conflicts_all <- dbGetQuery(con, "SELECT * from ged_disaggregated")
 
 # Creating approx date
 conflicts_all$date_start = as.Date(conflicts_all$date_start) 
@@ -57,18 +10,11 @@ conflicts_all$date_mid <-  conflicts_all$date_start + floor((conflicts_all$date_
 conflicts_all <- conflicts_all %>% 
   mutate(
     year = as.numeric(format(date_mid, format = "%Y")),
-    month = as.numeric(format(date_mid, format = "%m")))
+    month = as.numeric(format(date_mid, format = "%m")),
+    day = as.numeric(format(date_mid, format = "%d")))
 
-
-#internal conflicts
-conflicts_internal <-  conflicts_all %>% 
-  filter(is.na(gwnob))
-
-#external conflicts
-conflicts_external <- conflicts_all %>% 
-  filter(!is.na(gwnob))
-
-conflicts_all <- Total_Deaths(conflicts_all)
+#Creating total death pr incident
+conflicts_all$total_deaths <- rowSums(conflicts_all[,c("deaths_a", "deaths_b", "deaths_unk", "deaths_civ")], na.rm=TRUE)
 
 
 ####################################################################
@@ -78,32 +24,51 @@ conflicts_all <- Total_Deaths(conflicts_all)
 
 
 #Running numbers, deaths on uear and month
+conflicts_all <- conflicts_all %>%  
+  arrange(country,year,month,day)
+
 conflicts_all <-  data.table(conflicts_all)
-conflicts_all <-  conflicts_all[, deaths_running_year := cumsum(deaths_a +deaths_b + deaths_civ + deaths_unk), by=list(country, year)] 
-conflicts_all <-  conflicts_all[, deaths_running_months := cumsum(deaths_a +deaths_b + deaths_civ + deaths_unk), by=list(country, year, month)]
+conflicts_all <-  conflicts_all[, deaths_running_year := cumsum(total_deaths), by=list(country, year)] 
+conflicts_all <-  conflicts_all[, deaths_running_months := cumsum(total_deaths), by=list(country, year, month)]
 
 
 
 #Udvælgelse af til videre behandling
 conflicts_all <- conflicts_all %>% 
-  select(country,year,month,deaths_a,deaths_b, deaths_civ, deaths_unk,deaths_running_months,deaths_running_year) %>% 
-  arrange(country,year,month)
+  select(country,year,month,day,total_deaths,deaths_running_months,deaths_running_year) %>% 
+  arrange(country,year,month,day)
 
 #dækkende årstotal
 conflicts_all <-  conflicts_all %>% 
   group_by(country, year)
 conflicts_all <- conflicts_all %>% 
-  mutate(death_year = sum(deaths_a + deaths_b, deaths_civ, deaths_unk))
+  mutate(death_year = sum(total_deaths))
 
 conflicts_all <-  conflicts_all %>% 
   group_by(country, year, month)
 conflicts_all <- conflicts_all %>% 
-  mutate(death_month = sum(deaths_a + deaths_b, deaths_civ, deaths_unk))
+  mutate(death_month = sum(total_deaths))
 
 
 
-conflicts_all <-  conflicts_all %>% 
-  group_by(country, year, month)
+conflicts_all <- conflicts_all %>% 
+  group_by(country,year,month)
+
+conflict_grouped <- conflicts_all %>% 
+  expand(year= 2000:2017, month = 1:12) %>% 
+  left_join(conflicts_all) %>% 
+  summarise(total_deaths = sum(total_deaths),
+            conflict_incidents = n()) %>% 
+  arrange(country,year,month)
+
+
+
+  # cw=mean(civilwar),
+  # cw_m=mean(civilwar_month),
+  # cw_m_contribute=mean(cw_month_contribute))
+
+
+
 
 # Er der Borgerkrig det givne år? 
 conflicts_all <-  conflicts_all %>% 
@@ -181,3 +146,10 @@ states <- states %>%
 
 
 
+#internal conflicts
+conflicts_internal <-  conflicts_all %>% 
+  filter(is.na(gwnob))
+
+#external conflicts
+conflicts_external <- conflicts_all %>% 
+  filter(!is.na(gwnob))
