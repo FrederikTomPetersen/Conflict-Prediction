@@ -478,3 +478,90 @@ conflicts <- conflict
 rm(conflict)
 
 
+CC <-  complete.cases(DataSet_sub)
+complete <-  DataSet_sub[CC,]
+
+missing_debt <-  is.na(DataSet$gov_debt)
+
+DataSet_test <- DataSet[missing_debt,] %>%
+  mutate(gov_debt = mean(DataSet$gov_debt))
+  
+  mutate(gov_debt[missing_debt,] = mean(gov_debt))
+
+  
+  
+  
+####################################################  
+  
+#  Assign mean to missing values
+  
+  WDI_Tester <-  WDI
+  x <- WDI_Tester
+  y <- "gov_expenditure"
+  
+  
+Mean_On_Missing_WDI =function(x,y){
+  z <- paste0("mean_",y) 
+  x[z] <-  NA
+  
+  notna <- x %>% 
+    group_by(countryName) %>% 
+    filter(!is.na(y)) %>% 
+    mutate(notna[,z] = mean(notna[,y]))
+  
+  notna[,z] <- mean(notna[,y])
+  
+  %>% 
+    mutate(z = mean(y))
+  
+  notnaselect <-  notna %>% 
+    select(countryName, z) %>% 
+    distinct(countryName, z)
+  
+  x <- x %>% 
+    left_join(notnaselect)
+  
+  x <- x %>% 
+    mutate(x$y = ifelse(!is.na(x$y), x$y, x$z)) %>% 
+    select(-x$z)
+return(x)  
+}  
+
+WDI_Tester <- Mean_On_Missing_WDI(WDI_Tester,"gov_expenditure")   
+  
+  
+
+
+
+######################################3
+#Dette skal alves om til en funktion der tager to argumenter : df og col 
+WDI_Tester <-  WDI
+
+WDI_GROUP_NOTNA <-  WDI %>% 
+  group_by(countryName) %>% 
+  filter(!is.na(gov_debt)) %>% 
+  mutate(govdebtmean = mean(gov_debt)) 
+
+WDI_GROUP_NOTNA_selct <- WDI_GROUP_NOTNA %>% 
+  select(countryName, govdebtmean) %>% 
+  distinct(countryName,govdebtmean)
+
+WDI_Tester <-  WDI_Tester %>% 
+  left_join(WDI_GROUP_NOTNA_selct)
+  
+WDI_Tester <-  WDI_Tester %>% 
+  mutate(gov_debt = ifelse(!is.na(gov_debt),gov_debt,govdebtmean))
+#############################################3
+
+install.packages("rJava")
+library(rJava)
+install.packages("psData")
+library("psData")
+
+
+
+
+
+
+
+

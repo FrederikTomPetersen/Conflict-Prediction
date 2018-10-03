@@ -58,6 +58,7 @@ DataSet <- DataSet %>% mutate(total_deaths_year = coalesce(total_deaths_year,0))
 DataSet <- DataSet %>% mutate(civilwar = coalesce(civilwar,0))
 DataSet <- DataSet %>% mutate(civilwar_month = coalesce(civilwar_month,0))
 DataSet <- DataSet %>% mutate(cw_month_contribute = coalesce(cw_month_contribute,0))
+DataSet <- DataSet %>% mutate(deaths_running_months = coalesce(deaths_running_months,0))
 DataSet <- DataSet %>% mutate(goldstein = coalesce(goldstein,0))
 DataSet <- DataSet %>% mutate(avgtone = coalesce(avgtone,0))
 DataSet <- DataSet %>% mutate(q1nm = coalesce(q1nm,0))
@@ -72,6 +73,36 @@ DataSet <- DataSet %>% mutate(q3at = coalesce(q3at,0))
 DataSet <- DataSet %>% mutate(q4nm = coalesce(q4nm,0))
 DataSet <- DataSet %>% mutate(q4gs = coalesce(q4gs,0))
 DataSet <- DataSet %>% mutate(q4at = coalesce(q4at,0))
+DataSet <- DataSet %>% mutate(q1cnt = coalesce(q1cnt,0))
+DataSet <- DataSet %>% mutate(q2cnt = coalesce(q2cnt,0))
+DataSet <- DataSet %>% mutate(q3cnt = coalesce(q3cnt,0))
+DataSet <- DataSet %>% mutate(q4cnt = coalesce(q4cnt,0))
+DataSet <-  DataSet %>% 
+  mutate(country = country.name.en)
+
+
+
+NA2mean <- function(x){x <- x %>% 
+  group_by(country) %>% 
+  replace(x, is.na(x), mean(x, na.rm = TRUE))}
+
+
+DataSet$gov_debt <- NA2mean(DataSet$gov_debt)
+
+
+
+
+replace(DF, TRUE, lapply(DF, NA2mean))
+
+
+a <- DataSet %>% mutate(gov_debt = coalesce(gov_debt, mean(gov_debt)))
+
+
+a <-  DataSet[missing_debt,]$gov_debt
+
+DataSet <- DataSet[missing_debt, gov_debt := colMeans(gov_debt)]
+
+conflict <-  conflict[, deaths_running_months := cumsum(total_deaths_month), by=list(country, year)]
 
 
 

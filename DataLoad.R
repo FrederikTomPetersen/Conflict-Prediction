@@ -12,14 +12,77 @@ cat("\014")
 # you must fist install a postgres on your computer,
 # set up a DB and define the postgres connection as advised the master scripts 
 
-#
+
+############################################################
+#                                                          #
+#           Accessing gdelt aggregated on year             #
+#                                                          #
+############################################################
+
+Countries <-  codelist_panel %>% 
+  select(country.name.en,iso2c) %>% 
+  distinct(country.name.en,iso2c)
+
+myvars <- c("GLOBALEVENTID", "SQLDATE", "MonthYear", "Actor1Code", "Actor2Code", "Actor1CountryCode", "Actor2CountryCode","Actor1Type1Code","Actor2Type1Code", "Actor1Geo_CountryCode","Actor2Geo_CountryCode", "IsRootEvent", "EventCode", "EventBaseCode", "EventRootCode","QuadClass", "GoldsteinScale", "NumMentions", "AvgTone", "ActionGeo_CountryCode")
+
+
+All_eventdb_url <-  get_urls_gdelt_event_log()
+Event_url_list <- All_eventdb_url$urlData 
+Events <- Event_url_list[2:28]
+
+setwd(DataCave)
+Gdelt_header  <-  fread("GDELT_HEADER.csv")
+Gdelt_header <-  Gdelt_header$`Field Name`
+collist <- Gdelt_header[1:57]
+
+#Gdelt_getter_1(Events,1)
 
 
 ############################################################
 #                                                          #
-#               Access gdelt eventdatabase v.1             #
+#          Accessing gdelt aggregated on month             #
 #                                                          #
 ############################################################
+
+Countries <-  codelist_panel %>% 
+  select(country.name.en,iso2c) %>% 
+  distinct(country.name.en,iso2c)
+
+myvars <- c("GLOBALEVENTID", "SQLDATE", "MonthYear", "Actor1Code", "Actor2Code", "Actor1CountryCode", "Actor2CountryCode","Actor1Type1Code","Actor2Type1Code", "Actor1Geo_CountryCode","Actor2Geo_CountryCode", "IsRootEvent", "EventCode", "EventBaseCode", "EventRootCode","QuadClass", "GoldsteinScale", "NumMentions", "AvgTone", "ActionGeo_CountryCode")
+
+
+All_eventdb_url <-  get_urls_gdelt_event_log()
+Event_url_list <- All_eventdb_url$urlData 
+Events <- Event_url_list[29:115]
+
+setwd(DataCave)
+Gdelt_header  <-  fread("GDELT_HEADER.csv")
+Gdelt_header <-  Gdelt_header$`Field Name`
+collist <- Gdelt_header[1:57]
+
+#Gdelt_getter_2(Events,1)
+
+#     der er 15  tilbage af 87 iterationer"
+#       [1] "Dette er download række nummer 72"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 setwd(DataCave)
 
@@ -29,8 +92,6 @@ Event_url_list <- All_eventdb_url$urlData
 Event_1979_2005 <- Event_url_list[2:28]
 
 #get headers for df
-
-
 Gdelt_header  <-  fread("GDELT_HEADER.csv")
 Gdelt_header <-  Gdelt_header$`Field Name`
 collist <- Gdelt_header[1:57]
@@ -170,6 +231,36 @@ dbWriteTable(con, "wdi_secondary_male_enrollment",
 wdi_secondary_male_enrollment <- dbGetQuery(con, "SELECT * from wdi_secondary_male_enrollment")
 rm( WDI_enrollment)
 
+
+#####################################
+#             Agriculture           #
+#####################################
+WDIsearch('land')
+WDI_arable_land <-  WDI(indicator ="AG.LND.ARBL.ZS", start = 2000, end = 2018, extra =T, country='all')
+# AG.LND.ARBL.ZS = Arable land (% of land area)
+
+
+#####################################
+# Exports of goods and services (% of GDP)                #
+#####################################
+WDIsearch('export')
+WDI_export_GS <-  WDI(indicator ="NE.EXP.GNFS.ZS", start = 2000, end = 2018, extra =T, country='all')
+# "NE.EXP.GNFS.ZS"= Exports of goods and services (% of GDP)
+
+
+#####################################
+# Fuels, minerals, and metals                #
+#####################################
+WDIsearch('export')
+WDI_export_FMM <-  WDI(indicator ="TX.VAL.FMTL.UN.ZS", start = 2000, end = 2018, extra =T, country='all')
+# "TX.VAL.FMTL.UN.ZS"= Fuels, minerals, and metals (% of merchandise exports)
+
+#####################################
+# Merchandise exports (BOP): percentage of GDP (%)                #
+#####################################
+WDIsearch('Merchandise exports')
+WDI_export_ME <-  WDI(indicator ="BX.GSR.MRCH.ZS", start = 2000, end = 2018, extra =T, country='all')
+# ""BX.GSR.MRCH.ZS""= Merchandise exports (BOP): percentage of GDP (%)
 
 
 ##################################

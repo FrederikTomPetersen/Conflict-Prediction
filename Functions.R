@@ -9,6 +9,17 @@ cat("\014")
 
 
 
+#In order  to get the three gdelt_getters to work a country list must be defined 
+
+Countries <-  codelist_panel %>% 
+  select(country.name.en,iso2c) %>% 
+  distinct(country.name.en,iso2c)
+
+
+
+myvars <- c("GLOBALEVENTID", "SQLDATE", "MonthYear", "Actor1Code", "Actor2Code", "Actor1CountryCode", "Actor2CountryCode","Actor1Type1Code","Actor2Type1Code", "Actor1Geo_CountryCode","Actor2Geo_CountryCode", "IsRootEvent", "EventCode", "EventBaseCode", "EventRootCode","QuadClass", "GoldsteinScale", "NumMentions", "AvgTone", "ActionGeo_CountryCode")
+
+
 ###################################################################
 #                      Gdelt_getter 1                            #
 ###################################################################
@@ -31,21 +42,26 @@ Gdelt_getter_1 = function(x, m) {
     Table <-  fread(Tablename)
     colnames(Table) <-  collist
     Table <- Table %>% 
-      filter(Actor1CountryCode %in% Countries_List |Actor2CountryCode %in% Countries_List) %>% 
-      filter(EventBaseCode %in% Eventtypes | EventCode %in% Eventtypes)
-    Gdelt_Data <- rbind(Gdelt_Data, Table)         
+      filter(EventCode %in% 1:2050,
+             ActionGeo_CountryCode %in% Countries$iso2c)  %>% 
+      select(myvars)
+    Table <- Table %>%  
+      mutate(year = as.numeric(substring(MonthYear,1,4)),
+             month = as.numeric(substring(MonthYear,5,6)))
+    Table <- QuadClasser(Table)
+    
+    dbWriteTable(con, "gdelt_y", 
+                 value = Table, append = TRUE, row.names = FALSE)
+    
     rm(Table)
     unlink(Basefile)
     unlink(paste0(Basename,".csv"))
     print(paste("der er", length(x)-m, " tilbage af", length(x), "iterationer"))
-    Iterations_left = Iterations_left-1
+    print(paste("Dette er download række nummer", m))
     m = m + 1
-    Sys.time()
-    Sys.sleep(10)
-    
-    
+    print(Sys.time())
+    Sys.sleep(2)
   }
-  return(Gdelt_Data)
 }
 
 
@@ -58,8 +74,6 @@ Gdelt_getter_1 = function(x, m) {
 
 
 Gdelt_getter_2 = function(x, m) {
-  #x = liste af url'er
-  #m = startåret 
   for (i in x){
     paste("Download nummer", m)
     Event <- x[m]
@@ -71,23 +85,25 @@ Gdelt_getter_2 = function(x, m) {
     Table <-  fread(Tablename)
     colnames(Table) <-  collist
     Table <- Table %>% 
-      filter(Actor1CountryCode %in% Countries_List |Actor2CountryCode %in% Countries_List) %>% 
-      filter(EventBaseCode %in% Eventtypes | EventCode %in% Eventtypes)
-    Gdelt_Data <- rbind(Gdelt_Data, Table)
-    dbWriteTable(con, "gdelt_work_dataset_nyt", 
+      filter(EventCode %in% 1:2050,
+             ActionGeo_CountryCode %in% Countries$iso2c)  %>% 
+      select(myvars)
+    Table <- Table %>%  
+      mutate(year = as.numeric(substring(MonthYear,1,4)),
+             month = as.numeric(substring(MonthYear,5,6)))
+    Table <- QuadClasser(Table)
+    
+    dbWriteTable(con, "gdelt_y_m", 
                  value = Table, append = TRUE, row.names = FALSE)
     rm(Table)
     unlink(Basefile)
     unlink(paste0(Basename,".csv"))
     print(paste("der er", length(x)-m, " tilbage af", length(x), "iterationer"))
-    Iterations_left = Iterations_left-1
+    print(paste("Dette er download række nummer", m))
     m = m + 1
     Sys.time()
-    Sys.sleep(10)
-    
-    
+    Sys.sleep(2)
   }
-  return(Gdelt_Data)
 }
 
 ###################################################################
