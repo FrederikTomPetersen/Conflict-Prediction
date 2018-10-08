@@ -17,8 +17,8 @@ Countries <-  codelist_panel %>%
 
 
 
-myvars <- c("GLOBALEVENTID", "SQLDATE", "MonthYear", "Actor1Code", "Actor2Code", "Actor1CountryCode", "Actor2CountryCode","Actor1Type1Code","Actor2Type1Code", "Actor1Geo_CountryCode","Actor2Geo_CountryCode", "IsRootEvent", "EventCode", "EventBaseCode", "EventRootCode","QuadClass", "GoldsteinScale", "NumMentions", "AvgTone", "ActionGeo_CountryCode")
-
+myvars <- c("GLOBALEVENTID", "SQLDATE", "MonthYear", "Actor1Code", "Actor2Code", "Actor1CountryCode", "Actor2CountryCode","Actor1Type1Code","Actor2Type1Code", "Actor1Geo_CountryCode","Actor2Geo_CountryCode", "IsRootEvent", "EventCode", "EventBaseCode", "EventRootCode","QuadClass", "GoldsteinScale", "NumMentions", "AvgTone", "ActionGeo_CountryCode", "Actor1Religion1Code","Actor2Religion1Code", "Actor1EthnicCode","Actor2EthnicCode")
+myvars2 <- c("GLOBALEVENTID","year", "month", "Actor1Code", "Actor2Code", "Actor1CountryCode", "Actor2CountryCode","Actor1Type1Code","Actor2Type1Code", "Actor1Geo_CountryCode","Actor2Geo_CountryCode", "IsRootEvent", "EventCode", "EventBaseCode", "EventRootCode","QuadClass", "GoldsteinScale", "NumMentions", "AvgTone", "ActionGeo_CountryCode", "Actor1Religion1Code","Actor2Religion1Code", "Actor1EthnicCode","Actor2EthnicCode","rel", "eth")
 
 ###################################################################
 #                      Gdelt_getter 1                            #
@@ -48,6 +48,10 @@ Gdelt_getter_1 = function(x, m) {
     Table <- Table %>%  
       mutate(year = as.numeric(substring(MonthYear,1,4)),
              month = as.numeric(substring(MonthYear,5,6)))
+    Table <-  rel_eth(Table)
+    Table <-  Table %>%
+      select(myvars2)
+    
     Table <- QuadClasser(Table)
     
     dbWriteTable(con, "gdelt_y", 
@@ -91,6 +95,9 @@ Gdelt_getter_2 = function(x, m) {
     Table <- Table %>%  
       mutate(year = as.numeric(substring(MonthYear,1,4)),
              month = as.numeric(substring(MonthYear,5,6)))
+    Table <-  rel_eth(Table)
+    Table <-  Table %>%
+      select(myvars2)
     Table <- QuadClasser(Table)
     
     dbWriteTable(con, "gdelt_y_m", 
@@ -136,6 +143,9 @@ Gdelt_getter_3 = function(x, m) {
     Table <- Table %>%  
       mutate(year = as.numeric(substring(MonthYear,1,4)),
              month = as.numeric(substring(MonthYear,5,6)))
+    Table <-  rel_eth(Table)
+    Table <-  Table %>%
+      select(myvars2)
     Table <- QuadClasser(Table)
     
     #Gdelt_Data <- rbind(Gdelt_Data, Table)
@@ -353,6 +363,24 @@ Gdelt_processor = function(x) {
 
 
 ####################################################################
+###             Ethnic and relgious identifer                    ###
+####################################################################
+
+
+rel_eth = function(df) {
+  x <-  df
+  x$Actor1Religion1Code[x$Actor1Religion1Code==""] <- NA
+  x$Actor2Religion1Code[x$Actor2Religion1Code==""] <- NA
+  x$Actor1EthnicCode[x$Actor1EthnicCode==""] <- NA
+  x$Actor2EthnicCode[x$Actor2EthnicCode==""] <- NA
+  
+  xtate <-x %>% 
+    mutate(rel = ifelse(is.na(Actor1Religion1Code) | is.na(Actor2Religion1Code), 0, 1),
+           eth = ifelse(is.na(Actor1EthnicCode)| is.na(Actor2EthnicCode), 0, 1))
+  return(xtate)
+}
+
+####################################################################
 ###                         QUADCLASSER                          ###
 ####################################################################
 
@@ -374,9 +402,42 @@ QuadClasser = function(x){
   return(x)
 }
 
+####################################################################
+###               QUADCLASSER  Version 2                         ###
+####################################################################
 
 
+QuadClasser2 = function(x){
+  x <-  x %>% 
+    mutate(relq1at = ifelse(QuadClass==1 & rel==1, AvgTone[which(x$QuadClass == 1 &rel==1)], 0),
+           relq1gs = ifelse(QuadClass==1 & rel==1, GoldsteinScale[which(x$QuadClass == 1 &rel==1)], 0),
+           relq2at = ifelse(QuadClass==2 & rel==1, AvgTone[which(x$QuadClass == 2 &rel==1)], 0),
+           relq2gs = ifelse(QuadClass==2 & rel==1, GoldsteinScale[which(x$QuadClass == 2 &rel==1)], 0),
+           relq3at = ifelse(QuadClass==3 & rel==1, AvgTone[which(x$QuadClass == 3 &rel==1)], 0),
+           relq3gs = ifelse(QuadClass==3 & rel==1, GoldsteinScale[which(x$QuadClass == 3 &rel==1)], 0),
+           relq4at = ifelse(QuadClass==4 & rel==1, AvgTone[which(x$QuadClass == 4 &rel==1)], 0),
+           relq4gs = ifelse(QuadClass==4 & rel==1, GoldsteinScale[which(x$QuadClass == 4 &rel==1)], 0),
+           
+           ethq1at = ifelse(QuadClass==1 & eth==1, AvgTone[which(x$QuadClass == 1 &eth==1)], 0),
+           ethq1gs = ifelse(QuadClass==1 & eth==1, GoldsteinScale[which(x$QuadClass == 1 &eth==1)], 0),
+           ethq2at = ifelse(QuadClass==2 & eth==1, AvgTone[which(x$QuadClass == 2 &eth==1)], 0),
+           ethq2gs = ifelse(QuadClass==2 & eth==1, GoldsteinScale[which(x$QuadClass == 2 &eth==1)], 0),
+           ethq3at = ifelse(QuadClass==3 & eth==1, AvgTone[which(x$QuadClass == 3 &eth==1)], 0),
+           ethq3gs = ifelse(QuadClass==3 & eth==1, GoldsteinScale[which(x$QuadClass == 3 &eth==1)], 0),
+           ethq4at = ifelse(QuadClass==4 & eth==1, AvgTone[which(x$QuadClass == 4 &eth==1)], 0),
+           ethq4gs = ifelse(QuadClass==4 & eth==1, GoldsteinScale[which(x$QuadClass == 4 &eth==1)], 0),
+      
+           q1at = ifelse(QuadClass==1 & is.na(rel) & is.na(eth), GoldsteinScale[which(x$QuadClass == 1 & is.na(rel) & is.na(eth))],0),
+           q1gs = ifelse(QuadClass==1 & is.na(rel) & is.na(eth), GoldsteinScale[which(x$QuadClass == 1 & is.na(rel) & is.na(eth))],0),
+           q2at = ifelse(QuadClass==2 & is.na(rel) & is.na(eth), GoldsteinScale[which(x$QuadClass == 2 & is.na(rel) & is.na(eth))],0),
+           q2gs = ifelse(QuadClass==2 & is.na(rel) & is.na(eth), GoldsteinScale[which(x$QuadClass == 2 & is.na(rel) & is.na(eth))],0),
+           q3at = ifelse(QuadClass==3 & is.na(rel) & is.na(eth), GoldsteinScale[which(x$QuadClass == 3 & is.na(rel) & is.na(eth))],0),
+           q3gs = ifelse(QuadClass==3 & is.na(rel) & is.na(eth), GoldsteinScale[which(x$QuadClass == 3 & is.na(rel) & is.na(eth))],0),
+           q4at = ifelse(QuadClass==4 & is.na(rel) & is.na(eth), GoldsteinScale[which(x$QuadClass == 4 & is.na(rel) & is.na(eth))],0),
+           q4gs = ifelse(QuadClass==4 & is.na(rel) & is.na(eth), GoldsteinScale[which(x$QuadClass == 4 & is.na(rel) & is.na(eth))],0)
+           
+    )
+  return(x)
+}
 
-
-
-
+#Funktionen virker efter hensigten.

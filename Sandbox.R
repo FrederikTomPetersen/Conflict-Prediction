@@ -14,6 +14,8 @@ cat("\014")
 #  1) indeksering af dødstal og artikler/tone for at lave ggplot hvor begge optræder på samme akse
 # Jeg skal skrive et commit til postgres ind efter hvert dataload  --> posgres-comitter dør
 
+?save
+save(DataSet_sub,file="data.rds")
 
 
 
@@ -231,10 +233,7 @@ arrange(ActionGeo_CountryCode, date) %>%
 #Quading it up()
 
 
-Quady = function(x) {
-  x <-  x %>% 
-  if(QuadClass = 1) {
-    
+
 
     
 QuadClasser = function(x){
@@ -434,8 +433,8 @@ install.packages("sqldf")
 library("sqldf")
 
 
-just don't use "where," it is not needed. the bigger picture is that you need subset methods which r has in spades: subset,[,[[,$'
-Selecting Observations
+#just don't use "where," it is not needed. the bigger picture is that you need subset methods which r has in spades: subset,[,[[,$'
+#Selecting Observations
 # first 5 observations
 newdata <- mydata[1:5,]
 
@@ -558,6 +557,19 @@ library(rJava)
 install.packages("psData")
 library("psData")
 
+
+
+
+
+
+
+
+
+
+
+#########################################################
+
+# religious and ethnic groups
 
 
 

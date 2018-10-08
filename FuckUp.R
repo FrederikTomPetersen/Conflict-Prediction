@@ -18,6 +18,7 @@ GedAggregated <-  dbGetQuery(con, "SELECT * from ged_aggregated")
 GdeltGroup <-  dbGetQuery(con, "SELECT * from gdelt_y_m_d_group")
 WDI <- dbGetQuery(con, "SELECT * from wdi")
 
+save(WDI, file ="wdi.rds")
 
 #uncomment below if you want non tidiet and non aggregated datasets
 
