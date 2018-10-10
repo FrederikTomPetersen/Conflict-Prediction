@@ -19,6 +19,27 @@ save(DataSet_sub,file="data.rds")
 
 
 
+
+a <- WDIsearch(string = "population", field = "name", short = TRUE)
+View(a)
+WDIsearch(string = "gdp", field = "name", short = TRUE, cache = NULL)
+
+test <- WDI(country="all", indicator = "indícator.name.xx.11", start =1950, end=2017)
+
+# IN.EC.POP.TOTL - Population (Thousands)
+# 
+# SP.POP.0024.TO.ZS - Population 0-24 (% of total population)
+# 
+# SP.POP.GROW - Population growth (annual %)
+# 
+# SP.POP.TOTL.MA.ZS - Population, male (% of total)
+# 
+# SP.POP.TOTL - Population, total
+# 
+# SP.RUR.TOTL.ZS - Rural population (% of total population)
+# 
+# SP.URB.TOTL - Urban population
+
 # Jeg kunne lave noget usuperviseret learning på datasættet for at se om der er clusters i min afhængeige variable , både aggregeret i rå format. 
 # jeg kan desuden også se på usuperviseret i GDELT rå dataet. er der en sammenhæng mellem hvilke typer og toner ? 
 
