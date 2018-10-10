@@ -2,10 +2,18 @@
 
 ----------Project in progres------------
 
-The project aims to utilze GDELT event data to predict ethnic conflict. 
+This project aims to utilze GDELT event data to predict conflict and civilwar in particular. 
 
-The project consist of serveral part. 
-First of all there is the install.package script and several library_xx scripts - The install.packages will effectively install CRAN - packages 
+The project is largely written in R. However I have used a local postgres database to store my data and performe some tidying of the data and to group the data into country month which is the primary entity on the study. In order to replicate the study completely one need to adjust the "PostGres_connect" scirpt or make a work around for fetching, saving and loading data.
 
-script will install and load all the necessary 
-second there is a range of get_xxxx() functions  who serperatly aims to get, filter and store data. The script will store local copies of the datafiles on your computer and try to save the data to a localhost sql-server 
+From the master script it is possible to execute the project and the scripts serves as an overview of the progress of the project.
+
+  1) Loading R packages necessary for project  
+  2) Defining custom functions to be called throughout the other scripts
+  3) DataLoad - fetching data from online sources and saving them to postgres
+  4) In postgres - run SQL-scripts to tidy and group data
+  5) DataGather - loading data from postgres and joining data from different sources into the final dataset
+  6) Visualizing - visualizing the data
+  7) Modelling - modelling the data and running models
+  
+
