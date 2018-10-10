@@ -2,7 +2,7 @@
 
 library(tidyverse)
 library(data.table)
-
+library(foreign)
 
 setwd(DataCave)
 direct_link <-  "https://web.stanford.edu/group/ethnic/publicdata/repdata.zip"
@@ -20,22 +20,27 @@ rm(data)
 
 
 
-
+# Getting mountains
 mountains <- fldata %>% 
   distinct(ccode, mtnest)  # vi har 161 obs
+dbWriteTable(con, "fl_mountains", 
+             value = mountains, append = TRUE, row.names = FALSE)
 
-mountains <- fldata %>% 
-  distinct(ccode, mtnest)
 
+
+
+#Getting ethnic fractionalization
 ethnicfractionalization <- fldata %>% 
   distinct(ccode, ethfrac) #345 og 365 optræder to gange (Rusland og Jugoslavien) skal jeg abre tage middelværdien? 
+ethnicfractionalization <- ethnicfractionalization[-c(46,56),]
+dbWriteTable(con, "fl_ethnicfrac", 
+             value = ethnicfractionalization, append = TRUE, row.names = FALSE)
 
+
+
+#Getting religious fractionalization
 religiousfractionalization <-  fldata %>% 
   distinct(ccode,relfrac)
-
-oil <- fldata %>% 
-  distinct(ccode, Oil) # her har vi 184 variable, hvilket udtrykker at et land ikek altid har væres olieeksporterende
-
-colwars <-  fldata %>% 
-  distinct(ccode, colwars) #her får jeg 301 observatoner, hvilket udtrykker at der har været koloniale krige og ikek krige gennem tidsperioden 
+dbWriteTable(con, "fl_relfrac", 
+             value = religiousfractionalization, append = TRUE, row.names = FALSE)
 

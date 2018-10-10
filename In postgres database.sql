@@ -45,22 +45,22 @@ DELETE FROM public.gdelt_y_m_d
 		 "ActionGeo_CountryCode" as Country
         ,"year"
         ,"month"
-        ,SUM("NumMentions") as nummentions
+
 		,AVG("GoldsteinScale") as goldstein
 		,AVG("AvgTone") as AvgTone
-		,sum("q1nm") as q1nm
+
 		,AVG(cast(NULLIF("q1at", 0) AS BIGINT)) as q1at
 		,AVG(cast(NULLIF("q1gs", 0) AS BIGINT)) as q1gs
         ,SUM(CASE WHEN "QuadClass" = 1 THEN 1 ELSE 0 END) as q1cnt
-		,sum("q2nm") as q2nm
+
 		,AVG(cast(NULLIF("q2at", 0) AS BIGINT)) as q2at
 		,AVG(cast(NULLIF("q2gs", 0) AS BIGINT)) as q2gs
         ,SUM(CASE WHEN "QuadClass" = 2 THEN 1 ELSE 0 END) as q2cnt
-		,sum("q3nm") as q3nm
+
 		,AVG(cast(NULLIF("q3at", 0) AS BIGINT)) as q3at
 		,AVG(cast(NULLIF("q3gs", 0) AS BIGINT)) as q3gs
         ,SUM(CASE WHEN "QuadClass" = 3 THEN 1 ELSE 0 END) as q3cnt
-		,sum("q4nm") as q4nm
+
 		,AVG(cast(NULLIF("q4at", 0) AS BIGINT)) as q4at
 		,AVG(cast(NULLIF("q4gs", 0) AS BIGINT)) as q4gs
         ,SUM(CASE WHEN "QuadClass" = 4 THEN 1 ELSE 0 END) as q4cnt
