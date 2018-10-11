@@ -31,8 +31,8 @@
 		,AVG(cast(NULLIF("relq2gs",0) AS BIGINT)) as relq2gs
 		,SUM(CASE WHEN "QuadClass" = 2 AND "rel"= 1 THEN 1 ELSE 0 END) as relq2cnt
 		
-		,AVG(cast(NULLIF("relq1at", 0) AS BIGINT)) as relq3at
-		,AVG(cast(NULLIF("relq1gs",0) AS BIGINT)) as relq3gs
+		,AVG(cast(NULLIF("relq3at", 0) AS BIGINT)) as relq3at
+		,AVG(cast(NULLIF("relq3gs",0) AS BIGINT)) as relq3gs
 		,SUM(CASE WHEN "QuadClass" = 3 AND "rel"= 1 THEN 1 ELSE 0 END) as relq3cnt
 		
 		,AVG(cast(NULLIF("relq4at", 0) AS BIGINT)) as relq4at
@@ -48,8 +48,8 @@
 		,AVG(cast(NULLIF("ethq2gs",0) AS BIGINT)) as ethq2gs
 		,SUM(CASE WHEN "QuadClass" = 2 AND "eth"= 1 THEN 1 ELSE 0 END) as ethq2cnt
 		
-		,AVG(cast(NULLIF("ethq1at", 0) AS BIGINT)) as ethq3at
-		,AVG(cast(NULLIF("ethq1gs",0) AS BIGINT)) as ethq3gs
+		,AVG(cast(NULLIF("ethq3at", 0) AS BIGINT)) as ethq3at
+		,AVG(cast(NULLIF("ethq3gs",0) AS BIGINT)) as ethq3gs
 		,SUM(CASE WHEN "QuadClass" = 3 AND "eth"= 1 THEN 1 ELSE 0 END) as ethq3cnt
 		
 		,AVG(cast(NULLIF("ethq4at", 0) AS BIGINT)) as ethq4at
