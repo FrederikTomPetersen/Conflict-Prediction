@@ -20,6 +20,22 @@ save(DataSet_sub,file="data.rds")
 
 
 
+
+
+vars  <-  c("country", "year", "month", "q1at","q1cnt", "q2at","q2cnt", "q3at","q3cnt", "q4at","q4cnt", "relq1at", "relq1cnt", "relq2at", "relq2cnt", "relq3at", "relq3cnt", "relq4at", "relq4cnt", "ethq1at", "ethq1cnt", "ethq2at", "ethq2cnt", "ethq3at", "ethq3cnt", "ethq4at", "ethq4cnt")
+
+
+group1 <-  dbGetQuery(con, "SELECT * from gdelt_y_group") %>% 
+  select(vars)
+group2 <-  dbGetQuery(con, "SELECT * from gdelt_y_m_group") %>% 
+  select(vars)
+group3 <-  dbGetQuery(con, "SELECT * from gdelt_y_m_d_group") %>% 
+  select(vars)
+
+
+merged <- rbind(group1, group2, group3)
+
+
 a <- WDIsearch(string = "population", field = "name", short = TRUE)
 View(a)
 WDIsearch(string = "gdp", field = "name", short = TRUE, cache = NULL)
