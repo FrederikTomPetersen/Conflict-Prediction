@@ -23,25 +23,25 @@ Models = "C:/Users/Frederik/Documents/SpecialeModels/"
 
 setwd(GitHub)
 
-source("Packages.R")
+source("2 Packages.R")
 
-source("Functions.R")
+source("3 Functions.R")
 
-source("PostGres_connect.R")
+source("4 PostGres_connect.R")
 
-source("DataLoad.R")
+#source("DataLoad.R")
 
-source("DataTidy.R")
+#source("DataTidy.R")
 
 source("DataGather.R")
 
-source("DataXplore.R")
+#source("DataXplore.R")
 
-source("DataAnalysis.R")
+#source("DataAnalysis.R")
 
-source("DataProducts.R")
+#source("DataProducts.R")
 
 
 #####Data_reloader#####
 #Congrats - you effectively fucked up your main dataset -to obtain it again simple load it with the FuckUp.R script
-source("FuckUp.R")
+#source("FuckUp.R")
