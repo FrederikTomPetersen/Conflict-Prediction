@@ -268,14 +268,14 @@ WDI_export_GS <-  WDI(indicator ="NE.EXP.GNFS.ZS", start = 2000, end = 2018, ext
 # Fuels, minerals, and metals                #
 #####################################
 WDIsearch('export')
-WDI_export_FMM <-  WDI(indicator ="TX.VAL.FMTL.UN.ZS", start = 2000, end = 2018, extra =T, country='all')
+WDI_export_FMM <-  WDI(indicator ="TX.VAL.FUEL.Zs.UN", start = 2000, end = 2018, extra =T, country='all')
 # "TX.VAL.FMTL.UN.ZS"= Fuels, minerals, and metals (% of merchandise exports)
 
 #####################################
 # Merchandise exports (BOP): percentage of GDP (%)                #
 #####################################
 WDIsearch('Merchandise exports')
-WDI_export_ME <-  WDI(indicator ="BX.GSR.MRCH.ZS", start = 2000, end = 2018, extra =T, country='all')
+WDI_export_ME <-  WDI(indicator ="BX.GSR.MRCH.CD", start = 2000, end = 2018, extra =T, country='all')
 # ""BX.GSR.MRCH.ZS""= Merchandise exports (BOP): percentage of GDP (%)
 
 
