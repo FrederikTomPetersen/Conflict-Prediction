@@ -191,7 +191,7 @@ dbWriteTable(con, "ged_disaggregated",
 
 #GDP pr capita 2011 constant
 WDIsearch('gdp.*capita.*constant')
-GDP_capita_2011c_country = WDI(indicator='NY.GDP.PCAP.PP.KD', start=2000, end=2017, extra=T, country = 'all')
+GDP_capita_2011c_country = WDI(indicator='NY.GDP.PCAP.PP.KD', start=2000, end=2017,  country = 'all')
 
 dbWriteTable(con, "wdi_gdp", 
              value = GDP_capita_2011c_country, overwrite = TRUE, row.names = FALSE)
@@ -207,7 +207,7 @@ rm(GDP_capita_2011c_country)
 #####################################
 
 WDIsearch('expenditure')
-gov_expenditure =  WDI(indicator ='NE.DAB.TOTL.ZS', start=2000, end=2017, extra=T, country = 'all')   #Expenditure, total (% of GDP)
+gov_expenditure =  WDI(indicator ='NE.DAB.TOTL.ZS', start=2000, end=2017,  country = 'all')   #Expenditure, total (% of GDP)
 
 dbWriteTable(con, "wdi_gov_expenditure", 
              value = gov_expenditure, overwrite = TRUE, row.names = FALSE)
@@ -223,7 +223,7 @@ rm( gov_expenditure)
 ####       Goverment debt         ###
 #####################################
 WDIsearch('debt')
-GOV_debt <-  WDI(indicator = 'GC.DOD.TOTL.GD.ZS', start=2000, end=2017, extra=T, country = 'all')   # Central government debt, total (% of GDP)
+GOV_debt <-  WDI(indicator = 'GC.DOD.TOTL.GD.ZS', start=2000, end=2017,  country = 'all')   # Central government debt, total (% of GDP)
 
 dbWriteTable(con, "wdi_gov_debt", 
              value = GOV_debt, overwrite = TRUE, row.names = FALSE)
@@ -238,7 +238,7 @@ rm(GOV_debt)
 # secondary male school enrollment  #
 #####################################
 WDIsearch('enrollment')
-WDI_enrollment <- WDI(indicator ="SE.SEC.NENR.MA", start=2000, end=2017, extra=T, country = 'all') #School enrollment, secondary, male (% net)
+WDI_enrollment <- WDI(indicator ="SE.SEC.NENR.MA", start=2000, end=2017,  country = 'all') #School enrollment, secondary, male (% net)
 
 dbWriteTable(con, "wdi_secondary_male_enrollment", 
              value = WDI_enrollment, overwrite = TRUE, row.names = FALSE)
@@ -252,7 +252,7 @@ rm( WDI_enrollment)
 #             Agriculture           #
 #####################################
 WDIsearch('land')
-WDI_arable_land <-  WDI(indicator ="AG.LND.ARBL.ZS", start = 2000, end = 2018, extra =T, country='all')
+WDI_arable_land <-  WDI(indicator ="AG.LND.ARBL.ZS", start = 2000, end = 2018,  country='all')
 # AG.LND.ARBL.ZS = Arable land (% of land area)
 
 
@@ -260,7 +260,7 @@ WDI_arable_land <-  WDI(indicator ="AG.LND.ARBL.ZS", start = 2000, end = 2018, e
 # Exports of goods and services (% of GDP)                #
 #####################################
 WDIsearch('export')
-WDI_export_GS <-  WDI(indicator ="NE.EXP.GNFS.ZS", start = 2000, end = 2018, extra =T, country='all')
+WDI_export_GS <-  WDI(indicator ="NE.EXP.GNFS.ZS", start = 2000, end = 2018,  country='all')
 # "NE.EXP.GNFS.ZS"= Exports of goods and services (% of GDP)
 
 
@@ -268,14 +268,14 @@ WDI_export_GS <-  WDI(indicator ="NE.EXP.GNFS.ZS", start = 2000, end = 2018, ext
 # Fuels, minerals, and metals                #
 #####################################
 WDIsearch('export')
-WDI_export_FMM <-  WDI(indicator ="TX.VAL.FUEL.Zs.UN", start = 2000, end = 2018, extra =T, country='all')
+WDI_export_FMM <-  WDI(indicator ="TX.VAL.FUEL.Zs.UN", start = 2000, end = 2018, country='all')
 # "TX.VAL.FMTL.UN.ZS"= Fuels, minerals, and metals (% of merchandise exports)
 
 #####################################
 # Merchandise exports (BOP): percentage of GDP (%)                #
 #####################################
 WDIsearch('Merchandise exports')
-WDI_export_ME <-  WDI(indicator ="BX.GSR.MRCH.CD", start = 2000, end = 2018, extra =T, country='all')
+WDI_export_ME <-  WDI(indicator ="BX.GSR.MRCH.CD", start = 2000, end = 2018, country='all')
 # ""BX.GSR.MRCH.ZS""= Merchandise exports (BOP): percentage of GDP (%)
 
 

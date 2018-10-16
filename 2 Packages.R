@@ -40,6 +40,11 @@ library(WDI)
 # rWBclimate
 library(rWBclimate)
 
+
+#Polity IV data 
+install.packages("psData")
+library("psData")
+
 #visualisering
 library(ggplot2)
 
