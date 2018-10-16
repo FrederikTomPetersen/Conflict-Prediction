@@ -21,6 +21,72 @@ save(DataSet_sub,file="data.rds")
 
 
 
+grouped_mean_imputation <- function(df, group_var, impute_var){
+
+  
+  keys_q <- enquo(group_var)
+  values_q <- enquo(impute_var)
+  varname <- quo_name(values_q)
+  dummy_name <- paste0("imputed_", varname)
+  
+  df %>%
+    group_by(!! keys_q) %>%
+    mutate(
+      !! dummy_name := case_when(is.na(!! values_q) ~ 1,
+                                 T ~ 0), 
+      !! varname := case_when(is.na(!! values_q) ~ fixed_mean(!! values_q),
+                              T ~ !! values_q)
+    ) 
+}
+
+# This last bit is just to show that it works
+RESULT <- grouped_mean_imputation(WDI, countryName, gov_debt)
+
+
+
+
+
+################### meaner laves om til interpoleringsmaskine 
+grouped_lm_imputation = function(col, df){
+  key_q <-  enquo(col)
+  
+  
+df <- df
+interpolationsmodel <- lm(!! col ~ country + year, 
+                          data = df, 
+                          na.action=na.omit)
+
+
+
+df$col[is.na(df$col)] <-  predict(interpolationsmodel, newdata = df)
+return(df)
+}
+
+
+
+a <-  Linærterstat(WDI_arable_land, "AG.LND.ARBL.zs")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 vars  <-  c("country", "year", "month", "q1at","q1cnt", "q2at","q2cnt", "q3at","q3cnt", "q4at","q4cnt", "relq1at", "relq1cnt", "relq2at", "relq2cnt", "relq3at", "relq3cnt", "relq4at", "relq4cnt", "ethq1at", "ethq1cnt", "ethq2at", "ethq2cnt", "ethq3at", "ethq3cnt", "ethq4at", "ethq4cnt")
 
