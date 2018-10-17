@@ -86,28 +86,13 @@ NA2mean <- function(x){x <- x %>%
   group_by(country) %>% 
   replace(x, is.na(x), mean(x, na.rm = TRUE))}
 
-
 DataSet$gov_debt <- NA2mean(DataSet$gov_debt)
-
-
 
 
 replace(DF, TRUE, lapply(DF, NA2mean))
 
-
-a <- DataSet %>% mutate(gov_debt = coalesce(gov_debt, mean(gov_debt)))
-
-
-a <-  DataSet[missing_debt,]$gov_debt
-
-DataSet <- DataSet[missing_debt, gov_debt := colMeans(gov_debt)]
-
 conflict <-  conflict[, deaths_running_months := cumsum(total_deaths_month), by=list(country, year)]
 
-
-
-DataSet_sub <- DataSet %>%  
-  filter(year >= 2013)
 
 
 
