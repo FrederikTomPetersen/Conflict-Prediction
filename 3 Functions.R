@@ -52,9 +52,9 @@ Gdelt_getter_1 = function(x, m) {
     Table <-  Table %>%
       select(myvars2)
     
-    Table <- QuadClasser2(Table)
+    Table <- QuadClasser(Table)
     
-    dbWriteTable(con, "gdelt_y", 
+    dbWriteTable(con, "gdelt_y_2", 
                  value = Table, append = TRUE, row.names = FALSE)
     
     rm(Table)
@@ -98,9 +98,9 @@ Gdelt_getter_2 = function(x, m) {
     Table <-  rel_eth(Table)
     Table <-  Table %>%
       select(myvars2)
-    Table <- QuadClasser2(Table)
+    Table <- QuadClasser(Table)
     
-    dbWriteTable(con, "gdelt_y_m", 
+    dbWriteTable(con, "gdelt_y_m_2", 
                  value = Table, append = TRUE, row.names = FALSE)
     rm(Table)
     unlink(Basefile)
@@ -146,7 +146,7 @@ Gdelt_getter_3 = function(x, m) {
     Table <-  rel_eth(Table)
     Table <-  Table %>%
       select(myvars2)
-    Table <- QuadClasser2(Table)
+    Table <- QuadClasser(Table)
     
         dbWriteTable(con, "gdelt_y_m_d", 
                  value = Table, append = TRUE, row.names = FALSE)
