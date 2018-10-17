@@ -1,5 +1,7 @@
 cat("\014")  
 
+
+
 ########################################################################################
 ##                                                                                    ##
 ##                                      THE SANDBOX                                   ##
@@ -13,26 +15,137 @@ cat("\014")
 #  1) indeksering af dødstal og artikler/tone for at lave ggplot hvor begge optræder på samme akse
 
 
+##############################################
+
+#   Samling af WDI tabeller
+WDI_arable_land <-  dbGetQuery(con, "SELECT * from wdi_arable_land")
+WDI_export_FMM <-  dbGetQuery(con, "SELECT * from wdi_export_fmm")
+WDI_export_GS <-  dbGetQuery(con, "SELECT * from wdi_export_gs")
+WDI_export_ME <-  dbGetQuery(con, "SELECT * from wdi_export_me")
+WDI_gdp <-  dbGetQuery(con, "SELECT * from wdi_gdp")
+WDI_gov_expenditure <-  dbGetQuery(con, "SELECT * from wdi_gov_expenditure")
+WDI_population <-  dbGetQuery(con, "SELECT * from wdi_population")
+WDI_sse <-  dbGetQuery(con, "SELECT * from wdi_secondary_male_enrollment")
+
+
+vars <-  c("iso2c", "country","year", "NY.GDP.PCAP.PP.KD","NE.DAB.TOTL.ZS","GC.DOD.TOTL.GD.ZS","SE.SEC.NENR.MA","AG.LND.ARBL.ZS","NE.EXP.GNFS.ZS","TX.VAL.FUEL.Zs.UN","BX.GSR.MRCH.CD", "SP.POP.TOTL")
+A_WDi_gather <-  WDI_GDPcapita2011c %>% 
+  left_join(WDI_govexpenditure, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
+  left_join(WDI_govdebt, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
+  left_join(WDI_arable_land, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
+  left_join(WDI_population, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
+  left_join(WDI_export_FMM, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
+  left_join(WDI_export_GS, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
+  left_join(WDI_export_ME, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
+  left_join(WDI_enrollment, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
+  select(vars)
+
+
+md.pattern(WDi_gather)
+mice_plot <- aggr(WDi_gather_grouped, col=c('navyblue','yellow'),
+                    numbers=TRUE, sortVars=TRUE,
+                    labels=names(WDi_gather_grouped), cex.axis=.6,
+                    gap=1, ylab=c("Missing data","Pattern"))
+
+
+imputed_Data <- mice(WDi_gather, m=5, maxit = 2, method = 'rf', seed = 1)
+summary(imputed_Data)
 
 
 
-#             Samling af WDI tabeller
 
-wdi_arable_land <-  dbGetQuery(con, "SELECT * from wdi_arable_land")
-wdi_export_FFM <-  dbGetQuery(con, "SELECT * from wdi_export_fmm")
-wdi_export_GS <-  dbGetQuery(con, "SELECT * from wdi_export_gs")
-wdi_export_me <-  dbGetQuery(con, "SELECT * from wdi_export_me")
-wdi_gdp <-  dbGetQuery(con, "SELECT * from wdi_gdp")
-wdi_gov_expenditure <-  dbGetQuery(con, "SELECT * from wdi_gov_expenditure")
-wdi_population <-  dbGetQuery(con, "SELECT * from wdi_population")
-wdi_sse <-  dbGetQuery(con, "SELECT * from wdi_secondary_male_enrollment")
+# install.packages("imputeTS")
+# library("imputeTS")
+na.random(mydata)                  # Random Imputation
+na.locf(mydata, option = "locf")   # Last Obs. Carried Forward
+na.locf(mydata, option = "nocb")   # Next Obs. Carried Backward
+na.interpolation(mydata)           # Linear Interpolation
+na.seadec(mydata, algorithm = "interpolation") # Seasonal Adjustment then Linear Interpolation
 
 
 
 
+WDi_gather_grouped <- A_WDi_gather %>% 
+  select("iso2c", "year", "SP.POP.TOTL","AG.LND.ARBL.ZS")
+
+
+
+
+
+ara_group <-  WDI_arable_land %>% 
+  group_by(iso2c)
+ara_impute <- mice(ara_group, m=5, maxit = 10, method = 'rf', seed = 1)
+summary(ara_impute)
+c <-  complete(ara_impute)
+
+WDI_arable_land <-  dbGetQuery(con, "SELECT * from wdi_arable_land")
+
+
+
+
+
+
+
+
+########################################################################
+#                         Penn World Tables                            #
+########################################################################
+
+Country1 <-  codelist_panel %>% 
+  select(country.name.en,iso3c) %>% 
+  filter(!is.na(iso3c)) %>% 
+  distinct(iso3c)
+
+Country2 <- Country1 %>% 
+  as.list()
+c <-  Country2 %>% unlist
+
+PWT <- pwt9.0 %>% 
+  filter(year >= 1979 & isocode %in% c)
+
+
+vars <- c("hc", "xr", "rgdpe")
+PWT <- PWT %>% 
+  select(vars)
+PWT <-  PWT
+  rename(PWT, c("hc"="humancapital", "xr"="exchangerate", "rgdpe" = "GDP_expenditure"))
+
+
+
+mice_plot <- aggr(PWT, col=c('navyblue','yellow'),
+                  numbers=TRUE, sortVars=TRUE,
+                  labels=names(PWT), cex.axis=.4,
+                  gap=1, ylab=c("Missing data","Pattern"))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+########################################################################
+#                               Functions                              #
+########################################################################
+
+
+#Grouped mean imputation
 grouped_mean_imputation <- function(df, group_var, impute_var){
 
-  
   keys_q <- enquo(group_var)
   values_q <- enquo(impute_var)
   varname <- quo_name(values_q)
@@ -55,17 +168,14 @@ RESULT <- grouped_mean_imputation(WDI, countryName, gov_debt)
 
 
 
-################### meaner laves om til interpoleringsmaskine 
+# Grouped linear model imputation
 grouped_lm_imputation = function(col, df){
   key_q <-  enquo(col)
-  
   
 df <- df
 interpolationsmodel <- lm(!! col ~ country + year, 
                           data = df, 
                           na.action=na.omit)
-
-
 
 df$col[is.na(df$col)] <-  predict(interpolationsmodel, newdata = df)
 return(df)
@@ -73,7 +183,31 @@ return(df)
 
 
 
-a <-  Linærterstat(WDI_arable_land, "AG.LND.ARBL.zs")
+
+
+
+
+
+###############################################################################################
+
+#Polity IV
+
+DSN <- "http://www.systemicpeace.org/inscr/p4v2017.xls"
+download.file(DSN, "PolityIV")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
