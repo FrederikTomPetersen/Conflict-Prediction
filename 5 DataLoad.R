@@ -180,9 +180,18 @@ dbWriteTable(con, "ged_disaggregated",
 ############################################################
 #                                                          #
 #   Accessing the World Banks development indicators       #
-#     GDP, debt, expenditure and school enrollment         #
+#                                                          #
 #                                                          #
 ############################################################
+
+Country <-  codelist_panel %>% 
+  select(country.name.en,iso2c) %>% 
+  distinct(country.name.en,iso2c) %>% 
+  filter(!is.na(iso2c))
+
+iso2clist <- Country$iso2c
+
+
 
 
 
@@ -190,13 +199,13 @@ dbWriteTable(con, "ged_disaggregated",
 #    GDP pr capita 2011 Ccnstant    #
 #####################################
 
+# problem da der nærmenst ikke er nogen oplysnigner efter 1990
+
+
 #GDP pr capita 2011 constant
 WDIsearch('gdp.*capita.*constant')
-<<<<<<< HEAD
-GDP_capita_2011c_country = WDI(indicator='NY.GDP.PCAP.PP.KD', start=1979, end=2017, extra=T, country = 'all')
-=======
-GDP_capita_2011c_country = WDI(indicator='NY.GDP.PCAP.PP.KD', start=2000, end=2017,  country = 'all')
->>>>>>> f88e4ba86a1b55c582de456fdb4ff3970f015550
+WDI_GDPcapita2011c = WDI(indicator='NY.GDP.PCAP.PP.KD', start=1979, end=2017,  country = 'all') %>% 
+  filter(iso2c %in% iso2clist)
 
 dbWriteTable(con, "wdi_gdp", 
              value = GDP_capita_2011c_country, overwrite = TRUE, row.names = FALSE)
@@ -211,11 +220,8 @@ rm(GDP_capita_2011c_country)
 #####################################
 
 WDIsearch('expenditure')
-<<<<<<< HEAD
-gov_expenditure =  WDI(indicator ='NE.DAB.TOTL.ZS', start=1979, end=2017, extra=T, country = 'all')   #Expenditure, total (% of GDP)
-=======
-gov_expenditure =  WDI(indicator ='NE.DAB.TOTL.ZS', start=2000, end=2017,  country = 'all')   #Expenditure, total (% of GDP)
->>>>>>> f88e4ba86a1b55c582de456fdb4ff3970f015550
+WDI_govexpenditure =  WDI(indicator ='NE.DAB.TOTL.ZS', start=1979, end=2017,  country = 'all') %>%   
+filter(iso2c %in% iso2clist)
 
 dbWriteTable(con, "wdi_gov_expenditure", 
              value = gov_expenditure, overwrite = TRUE, row.names = FALSE)
@@ -228,11 +234,8 @@ rm( gov_expenditure)
 ####       Goverment debt         ###
 #####################################
 WDIsearch('debt')
-<<<<<<< HEAD
-GOV_debt <-  WDI(indicator = 'GC.DOD.TOTL.GD.ZS', start=1979, end=2017, extra=T, country = 'all')   # Central government debt, total (% of GDP)
-=======
-GOV_debt <-  WDI(indicator = 'GC.DOD.TOTL.GD.ZS', start=2000, end=2017,  country = 'all')   # Central government debt, total (% of GDP)
->>>>>>> f88e4ba86a1b55c582de456fdb4ff3970f015550
+WDI_govdebt <-  WDI(indicator = 'GC.DOD.TOTL.GD.ZS', start=1979, end=2017,  country = 'all') %>%   
+  filter(iso2c %in% iso2clist)   # Central government debt, total (% of GDP)
 
 dbWriteTable(con, "wdi_gov_debt", 
              value = GOV_debt, overwrite = TRUE, row.names = FALSE)
@@ -244,11 +247,9 @@ rm(GOV_debt)
 # secondary male school enrollment  #
 #####################################
 WDIsearch('enrollment')
-<<<<<<< HEAD
-WDI_enrollment <- WDI(indicator ='SE.SEC.NENR.MA', start=1979, end=2017, extra=T, country = 'all') #School enrollment, secondary, male (% net)
-=======
-WDI_enrollment <- WDI(indicator ="SE.SEC.NENR.MA", start=2000, end=2017,  country = 'all') #School enrollment, secondary, male (% net)
->>>>>>> f88e4ba86a1b55c582de456fdb4ff3970f015550
+WDI_enrollment <- WDI(indicator ="SE.SEC.NENR.MA", start=1979, end=2017,  country = 'all')%>%   
+  filter(iso2c %in% iso2clist) #School enrollment, secondary, male (% net)
+
 
 dbWriteTable(con, "wdi_secondary_male_enrollment", 
              value = WDI_enrollment, overwrite = TRUE, row.names = FALSE)
@@ -260,16 +261,15 @@ rm(WDI_enrollment)
 #             Agriculture           #
 #####################################
 WDIsearch('land')
-<<<<<<< HEAD
-WDI_arable_land <-  WDI(indicator ='AG.LND.ARBL.ZS', start = 1979, end = 2018, extra =T, country='all')
+
+WDI_arable_land <-  WDI(indicator ="AG.LND.ARBL.ZS", start = 1979, end = 2018,  country='all') %>%   
+  filter(iso2c %in% iso2clist)
 
 dbWriteTable(con, "wdi_arable_land", 
              value = WDI_arable_land, overwrite = TRUE, row.names = FALSE)
 
 rm(WDI_arable_land)
-=======
-WDI_arable_land <-  WDI(indicator ="AG.LND.ARBL.ZS", start = 2000, end = 2018,  country='all')
->>>>>>> f88e4ba86a1b55c582de456fdb4ff3970f015550
+
 # AG.LND.ARBL.ZS = Arable land (% of land area)
 
 
@@ -277,57 +277,55 @@ WDI_arable_land <-  WDI(indicator ="AG.LND.ARBL.ZS", start = 2000, end = 2018,  
 # Exports of goods and services (% of GDP)                #
 #####################################
 WDIsearch('export')
-<<<<<<< HEAD
-WDI_export_GS <-  WDI(indicator = 'NE.EXP.GNFS.ZS', start = 1979, end = 2018, extra =T, country='all')
+WDI_export_GS <-  WDI(indicator ="NE.EXP.GNFS.ZS", start = 1979, end = 2018,  country='all')%>%   
+  filter(iso2c %in% iso2clist)
+
 
 dbWriteTable(con, "wdi_export_gs", 
              value = WDI_export_GS, overwrite = TRUE, row.names = FALSE)
 
 rm(WDI_export_GS)
-=======
-WDI_export_GS <-  WDI(indicator ="NE.EXP.GNFS.ZS", start = 2000, end = 2018,  country='all')
->>>>>>> f88e4ba86a1b55c582de456fdb4ff3970f015550
+
+
 # "NE.EXP.GNFS.ZS"= Exports of goods and services (% of GDP)
 
 
 #####################################
 # Fuels, minerals, and metals                #
 #####################################
-<<<<<<< HEAD
+
 WDIsearch('Fuels')
-WDI_export_FMM <-  WDI(indicator = 'TX.VAL.FMTL.UN.ZS', start = 1979, end = 2017, extra =T, country='all')
+WDI_export_FMM <-  WDI(indicator ="TX.VAL.FUEL.Zs.UN", start = 1979, end = 2018, country='all')%>%   
+  filter(iso2c %in% iso2clist)
 
 dbWriteTable(con, "wdi_export_fmm", 
              value = WDI_export_FMM, overwrite = TRUE, row.names = FALSE)
 
 rm(WDI_export_FMM)
-=======
-WDIsearch('export')
-WDI_export_FMM <-  WDI(indicator ="TX.VAL.FUEL.Zs.UN", start = 2000, end = 2018, country='all')
->>>>>>> f88e4ba86a1b55c582de456fdb4ff3970f015550
 # "TX.VAL.FMTL.UN.ZS"= Fuels, minerals, and metals (% of merchandise exports)
 
 #####################################
 # Merchandise exports (BOP): percentage of GDP (%)                #
 #####################################
 WDIsearch('Merchandise exports')
-<<<<<<< HEAD
-WDI_export_ME <-  WDI(country= 'all', indicator ='BX.GSR.MRCH.ZS', start = 1979, end = 2018)
+
+WDI_export_ME <-  WDI(indicator ="BX.GSR.MRCH.CD", start = 1979, end = 2018, country='all')%>%   
+  filter(iso2c %in% iso2clist)
 
 dbWriteTable(con, "wdi_export_me", 
              value = WDI_export_ME, overwrite = TRUE, row.names = FALSE)
 
 rm(WDI_export_ME)
-=======
-WDI_export_ME <-  WDI(indicator ="BX.GSR.MRCH.CD", start = 2000, end = 2018, country='all')
->>>>>>> f88e4ba86a1b55c582de456fdb4ff3970f015550
+
+
 # ""BX.GSR.MRCH.ZS""= Merchandise exports (BOP): percentage of GDP (%)
 
 ###################################
 #Population
 ###################################
 WDIsearch(string = "population", field = "name", short = TRUE)
-wdi_population <- WDI(country="all", indicator = 'SP.POP.TOTL', start =1979, end=2017)
+WDI_population <- WDI(country="all", indicator = 'SP.POP.TOTL', start =1979, end=2018)%>%   
+  filter(iso2c %in% iso2clist)
 
 dbWriteTable(con, "wdi_population", 
              value = wdi_population, overwrite = TRUE, row.names = FALSE)
