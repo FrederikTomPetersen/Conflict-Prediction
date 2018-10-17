@@ -13,6 +13,12 @@ cat("\014")
 # devtools::install_github("abresler/gdeltr2")
 #devtools::install_github("ropensci/rWBclimate")
 
+
+# install.packages("imputeTS")
+# library("imputeTS")
+# mice  pakken skal også ind 
+#
+
 #States
 library("states")
 library("countrycode")
@@ -34,16 +40,12 @@ library("dplyr")
 library("tidyverse")
 library("data.table")
 
-#world bank development indicators
-library(WDI)
 
-# rWBclimate
-library(rWBclimate)
-
-
-#Polity IV data 
-install.packages("psData")
-library("psData")
+#Getting data
+library("WDI") #world bank development indicators
+library("rWBclimate") # rWBclimate
+library("psData") #Polity IV data 
+library("pwt9")
 
 #visualisering
 library(ggplot2)
@@ -51,3 +53,7 @@ library(ggplot2)
 # regression
 library(caret)
 library(xgboost)
+
+
+#functional programming
+#purrr
