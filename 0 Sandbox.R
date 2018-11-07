@@ -18,6 +18,7 @@ cat("\014")
 ##############################################
 
 #   Samling af WDI tabeller
+WDI_GDPcapita2011c <-  dbGetQuery(con, "SELECT * from wdi_gdp")
 WDI_arable_land <-  dbGetQuery(con, "SELECT * from wdi_arable_land")
 WDI_export_FMM <-  dbGetQuery(con, "SELECT * from wdi_export_fmm")
 WDI_export_GS <-  dbGetQuery(con, "SELECT * from wdi_export_gs")
@@ -25,13 +26,14 @@ WDI_export_ME <-  dbGetQuery(con, "SELECT * from wdi_export_me")
 WDI_gdp <-  dbGetQuery(con, "SELECT * from wdi_gdp")
 WDI_gov_expenditure <-  dbGetQuery(con, "SELECT * from wdi_gov_expenditure")
 WDI_population <-  dbGetQuery(con, "SELECT * from wdi_population")
-WDI_sse <-  dbGetQuery(con, "SELECT * from wdi_secondary_male_enrollment")
+WDI_enrollment <-  dbGetQuery(con, "SELECT * from wdi_secondary_male_enrollment")
 
 
-vars <-  c("iso2c", "country","year", "NY.GDP.PCAP.PP.KD","NE.DAB.TOTL.ZS","GC.DOD.TOTL.GD.ZS","SE.SEC.NENR.MA","AG.LND.ARBL.ZS","NE.EXP.GNFS.ZS","TX.VAL.FUEL.Zs.UN","BX.GSR.MRCH.CD", "SP.POP.TOTL")
+
+
+vars <-  c("iso2c","year", "NY.GDP.PCAP.PP.KD","NE.DAB.TOTL.ZS","SE.SEC.NENR.MA","AG.LND.ARBL.ZS","NE.EXP.GNFS.ZS","TX.VAL.FUEL.Zs.UN","BX.GSR.MRCH.CD", "SP.POP.TOTL")
 A_WDi_gather <-  WDI_GDPcapita2011c %>% 
-  left_join(WDI_govexpenditure, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
-  left_join(WDI_govdebt, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
+  left_join(WDI_gov_expenditure, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
   left_join(WDI_arable_land, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
   left_join(WDI_population, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
   left_join(WDI_export_FMM, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
@@ -39,6 +41,27 @@ A_WDi_gather <-  WDI_GDPcapita2011c %>%
   left_join(WDI_export_ME, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
   left_join(WDI_enrollment, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
   select(vars)
+
+
+
+
+imputed_Data <- mice(A_WDi_gather, m=5, maxit = 5, method = 'rf', seed = 1)
+
+
+
+
+#virker og giver den nærmenste værdi for gruppen
+setDT(WDI_arable_land)[, ValueInterp := if(length(na.omit(AG.LND.ARBL.ZS))<2) AG.LND.ARBL.ZS else na.approx(AG.LND.ARBL.ZS, na.rm=TRUE), iso2c]
+
+setDT(WDI_arable_land)[, ValueInterp2 := if(length(na.omit(AG.LND.ARBL.ZS))<2) AG.LND.ARBL.ZS else na.interp(AG.LND.ARBL.ZS), iso2c]
+
+setDT(WDI_arable_land)[, ValueInterp3 := if(length(na.omit(AG.LND.ARBL.ZS))<2) AG.LND.ARBL.ZS else na.interpolation(AG.LND.ARBL.ZS), iso2c]
+
+
+setDT(WDI_arable_land)[, ValueInterp4 := if(length(na.omit(AG.LND.ARBL.ZS))<2) AG.LND.ARBL.ZS else mice(AG.LND.ARBL.ZS$, m=5, maxit = 2, method = 'norm', seed = 1), iso2c]
+
+
+
 
 
 md.pattern(WDi_gather)
@@ -54,12 +77,13 @@ summary(imputed_Data)
 
 
 
-# install.packages("imputeTS")
-# library("imputeTS")
+ install.packages("imputeTS")
+ library("imputeTS")
 na.random(mydata)                  # Random Imputation
 na.locf(mydata, option = "locf")   # Last Obs. Carried Forward
 na.locf(mydata, option = "nocb")   # Next Obs. Carried Backward
 na.interpolation(mydata)           # Linear Interpolation
+na.interp()
 na.seadec(mydata, algorithm = "interpolation") # Seasonal Adjustment then Linear Interpolation
 
 
@@ -190,10 +214,50 @@ return(df)
 
 ###############################################################################################
 
+Countries <-  codelist_panel %>% 
+  select(iso2c,p4n) %>%
+  filter(!is.na(p4n)) %>% 
+  distinct(iso2c,p4n)
+
+
 #Polity IV
-
+setwd(DataCave)
 DSN <- "http://www.systemicpeace.org/inscr/p4v2017.xls"
-download.file(DSN, "PolityIV")
+download.file(DSN, "PolityIV.xls")
+PolityIV <- read_excel("p4v2017.xls") %>% 
+  filter(year>=1979) %>% 
+  left_join(Countries, by = c("ccode" = "p4n")) %>% 
+  select("country", "year", "democ", "autoc", "polity2", "iso2c", "ccode")
+
+dbWriteTable(con, "polity_4", 
+             value = PolityIV, overwrite = TRUE, row.names = FALSE)
+rm(PolityIV)
+
+
+
+  
+  
+  
+################### Vizualizing deaths pr year #######################
+ged <-  dbGetQuery(con, "SELECT * from ged_aggregated")
+
+plotdata <- ged %>% 
+  group_by(year) %>% 
+  summarise(deathyear = sum(deaths))
+
+plotdata %>% 
+ggplot(aes(x = year, y = deathyear/1000)) +
+  geom_line()+
+  geom_point() + 
+  labs(title = "Antal døde i intrastatslige konflikter", y = "Kamprelaterede døde - i tusinder", x="Årstal") +
+  theme_calc() +
+  theme(legend.position="right")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  coord_cartesian() +
+  scale_color_gradient()+
+  scale_shape_manual(15) +
+  scale_x_continuous(breaks=c(1989,1995,2000,2005,2010,2015,2017)) +
+  scale_y_continuous(breaks= c(25,50,100,200,300,400,500,600))
 
 
 
@@ -212,6 +276,19 @@ download.file(DSN, "PolityIV")
 
 
 
+###############################
+  WDIsearch('NY.GDP.PCAP.CD')
+WDI_GDP <- WDI(indicator ="NY.GDP.PCAP.CD", start=1989, end=2017,  country = 'all')%>%   
+  filter(iso2c %in% iso2clist) # 621 af værdierne af NA
+
+
+a <- is.na(WDI_GDP$NY.GDP.PCAP.CD)
+b <- WDI_GDP[a,]
+
+dbWriteTable(con, "wdi_secondary_male_enrollment", 
+             value = WDI_enrollment, overwrite = TRUE, row.names = FALSE)
+
+rm(WDI_enrollment)
 
 
 
@@ -221,16 +298,41 @@ download.file(DSN, "PolityIV")
 
 
 
+#################################################3
+#growth
 
 
+CountryCodelistPanel <-  codelist_panel %>% 
+  select(country.name.en,iso3c, p4n, fips) %>% 
+  filter(!is.na(p4n), !is.na(iso3c), !is.na(fips))
 
 
+WDIsearch('growth')
+WDI_growth = WDI(indicator='NY.GDP.MKTP.KD.ZG', start=1989, end=2017,  country = 'all') %>% 
+  filter(iso2c %in% iso2clist)
+
+sort <-  CountryCodelistPanel %>% 
+  select(p4n, fips)
+
+gedconflict <- GedAggregated %>% 
+  filter(cwy==1) %>% 
+  distinct(p4n) %>% 
+  left_join(sort, by=c("p4n"="p4n"))
+
+a <-  GedAggregated %>%
+  distinct(p4n) %>% 
+  right_join(!gedconflict, by=c("p4n"="p4n"))
+
+conflict <- WDI_growth %>% 
+  filter(iso2c %in% gedconflict$fips & !is.na(NY.GDP.MKTP.KD.ZG))
+growthinconflict <- mean(conflict$NY.GDP.MKTP.KD.ZG)
+
+noconflilct <- WDI_growth %>% 
+  filter(!iso2c %in% gedconflict$fips & !is.na(NY.GDP.MKTP.KD.ZG))
+growthinpeace <-  mean(noconflilct$NY.GDP.MKTP.KD.ZG)
 
 
-
-
-
-
+'%ni%' <- Negate("%in%")
 
 
 
@@ -258,52 +360,6 @@ grouped <-  dbGetQuery(con, "SELECT * from gdelt_group27")
 
 
 
-WDIsearch(string = "population", field = "name", short = TRUE)
-WDIsearch(string = "gdp", field = "name", short = TRUE, cache = NULL)
-population <- WDI(country="all", indicator = "SP.POP.TOTL", start =1979, end=2017)
-
-
-
-
-# IN.EC.POP.TOTL - Population (Thousands)
-# 
-# SP.POP.0024.TO.ZS - Population 0-24 (% of total population)
-# 
-# SP.POP.GROW - Population growth (annual %)
-# 
-# SP.POP.TOTL.MA.ZS - Population, male (% of total)
-# 
-# SP.POP.TOTL - Population, total
-# 
-# SP.RUR.TOTL.ZS - Rural population (% of total population)
-# 
-# SP.URB.TOTL - Urban population
-
-# Jeg kunne lave noget usuperviseret learning på datasættet for at se om der er clusters i min afhængeige variable , både aggregeret i rå format. 
-# jeg kan desuden også se på usuperviseret i GDELT rå dataet. er der en sammenhæng mellem hvilke typer og toner ? 
-
-#Jeg er vel mere ude i et klassifikationsproblem end jeg er ude i en kontinuerligt regrsseion problem. 
-
-
-#10 fold cross validation tager 9/10 vind i train til at køre sit train på. 
-#Derefter sammenligner man hvilken af de ti iterationer der er bedst og den bedste er så den modellering, der erbedst ? 
-#CV bruges i stor stil til at evaluerer modeller 
-# vi får retunerede en de optiamle  hyperparameters 
-
-# check list 
-# 1 .Never fit our model building on validation data
-# 2. Check thta the test data has never been used
-# 3. Ensure the model has converged ( do not supress warnings
-# 4. Am i using a static model for times series? 
-
-
-
-# hvordan skal jeg sample trian og test når jeg arbejde med tidsserie. 
-#Jeg bliver vel nødt til at se om historisk data kan forudsige fremtidig data, i stedet for at tager data fra hele tidslinjen og så prøve at gætte data i midten. 
-# solution could be block sampling  or forward moving sampling 
-
-
-
 
 
 #####################################################################
@@ -317,8 +373,6 @@ ggplot(data=df, aes(df$tone)) +
 
 ggplot(data=df, aes(df$Goldstein)) +
   geom_histogram(bins = 400)
-
-
 
 scale_fill_gradient2(
   low = "red", hight = "blue",
@@ -368,30 +422,10 @@ Gdelt %>%
 
 
 
-#####Getting the countries right #############
-
-#Tolower
-Africa$countryName <-  tolower(Africa$countryName)
-GED_disaggregated$country <- tolower(GED_disaggregated$country)
-
-#Join to harmonize
-GED_disaggregated_test <- GED_disaggregated %>% 
-  left_join(Africa, by = c("country" = "countryName"), copy =T)
-Gdelt_sub <-  Gdelt_count %>% 
-  filter(ActionGeo_CountryCode %in% c("EZ", "AG", "AC"))
-Gdelt_sub <-  Gdelt_sub %>% 
-  left_join(Africa, by = c("ActionGeo_CountryCode" = "countryCode"))
-#Jitterplot  
-Article_plot <- ggplot(data = Gdelt_sub) +
-  geom_point(aes(x = year,  y = Num_events), alpha = 0.1) +
-  geom_point(data=GED_disaggregated, aes(x= year, y =TotalDeaths))
-
-Article_plot + facet_grid(ActionGeo_CountryCode ~.) 
-
 
 #############################################################################
 ###                           GGPlot Samlet                             ####
-## KRISTIAN: GDEL
+## 
 Samlet %>%
   filter(ActionGeo_CountryCode %in% c("AF", "FR", "EG")) %>%
   mutate(
@@ -406,11 +440,13 @@ arrange(ActionGeo_CountryCode, date) %>%
 
 ####################################################  
 #Running numbers
+
 conflict <- conflict %>%  
   arrange(country,year,month)
 conflict <-  data.table(conflict)
 conflict <-  conflict[, deaths_running_year := cumsum(total_deaths), by=list(country, year)] 
 conflict <-  conflict[, deaths_running_months := cumsum(total_deaths), by=list(country, year, month)]
+
 
 
 #############################################3
