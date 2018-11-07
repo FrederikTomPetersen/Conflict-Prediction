@@ -91,8 +91,6 @@ DataSet$gov_debt <- NA2mean(DataSet$gov_debt)
 
 replace(DF, TRUE, lapply(DF, NA2mean))
 
-conflict <-  conflict[, deaths_running_months := cumsum(total_deaths_month), by=list(country, year)]
-
 
 
 
