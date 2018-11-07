@@ -36,7 +36,7 @@ Gdelt_header  <-  fread("GDELT_HEADER.csv")
 Gdelt_header <-  Gdelt_header$`Field Name`
 collist <- Gdelt_header[1:57]
 
-Gdelt_getter_1(Events,1)
+# Gdelt_getter_1(Events,1)
 
 
 ############################################################
@@ -62,7 +62,7 @@ Gdelt_header  <-  fread("GDELT_HEADER.csv")
 Gdelt_header <-  Gdelt_header$`Field Name`
 collist <- Gdelt_header[1:57]
 
-Gdelt_getter_2(Events,1)
+# Gdelt_getter_2(Events,1)
 
 
 
@@ -91,61 +91,10 @@ Gdelt_header <-  Gdelt_header$`Field Name`
 collist <- Gdelt_header[1:58]
 
 
-Gdelt_getter_3(Events,1039)
-
-#970
-[1] "Dette er download rÃ¦kke nummer 1671"
+# Gdelt_getter_3(Events,1039)
 
 
-
-
-
-
-setwd(DataCave)
-
-#get list of events
-All_eventdb_url <-  get_urls_gdelt_event_log()
-Event_url_list <- All_eventdb_url$urlData 
-Event_1979_2005 <- Event_url_list[2:28]
-
-#get headers for df
-Gdelt_header  <-  fread("GDELT_HEADER.csv")
-Gdelt_header <-  Gdelt_header$`Field Name`
-collist <- Gdelt_header[1:57]
-
-#Preparing the "for loop"
-Iterations <- length(Event_1979_2005)
-Iterations_left =Iterations
-
-
-#List of countries in focus:
-Countries <-  fread("Lande.csv")
-Countries_List <-  Countries$isoAlpha3
-
-Africa = Countries %>% 
-  filter(continent == "AF")
-Africa_List <-  Africa$isoAlpha3
-
-#interesting events
-Eventtypes <-  readRDS("C:/Users/Frederik/Documents/GitHub/Ethnic-Conflict-Prediction/Data/EventCodes.rds")
-Eventtypes <- as.numeric(c("1031","1032","1033","1034","104","1041","1042","1043","1044","105","1051","1052","1053","1054","1055","1056","106","107","108","110","111","112","1121","1122","1123","1124","1125","113","114","115","116","120","121","1211","1212","122","122","1222","1223","1224","123","1231","1232","1233","1234","124","1241","1242","1243","124","1245","1246","125","126","127","128","129","130","131","1311","1312","1313","132","1321","1322","1323","1324","133","134","135","136","137","138","1381","1382","1383","1384","1385","139","140","141","1411","1412","1413","1414","142","1421","1422","1423","1424","143","1431","1432","1433","1434","144","1441","1442","1443","1444","145","150","151","152","153","154","155","160","161","162","1621","1622","1623","163","164","165","166","1661","1662","1663","170","171","1711","1712","172","1721","1722","1723","1724","173","174","175","176","181","1821","191","192"))
-
-Output <-  Gdelt_getter(Event_1979_2005, 1)
-
-### wrrting to postgres
-
-dbWriteTable(con, "Table", 
-             value = tabletest, overwrite = TRUE, row.names = FALSE)
-
-# query the data from postgreSQL 
-Gdelt <- dbGetQuery(con, "SELECT * from gdelt_work_dataset")
-
-rm(All_eventdb_url, Output,Gdelt_Data, Iterations, Tablename, Iterations_left,collist, Basefile, Basename, Event,Event_1979_1981,Event_1979_1985,Event_1979_2005,Event_url_list,Eventtypes)
-
-
-############################################################
-
-
+  
 
 ############################################################
 #                                                          #
@@ -154,26 +103,80 @@ rm(All_eventdb_url, Output,Gdelt_Data, Iterations, Tablename, Iterations_left,co
 #                                                          #
 ############################################################
 
-
 setwd(DataCave)
 direct_link <-  "http://ucdp.uu.se/downloads/ged/ged181-shp.zip"
 download.file(direct_link, basename(direct_link))
 unzip(basename(direct_link))
 
 ged181 <-  sf::read_sf("ged181.shp", crs = 4326) %>% 
-    select(country, reagion, country_id,year,deaths_a,deaths_b, deaths_civ, deaths_unk,date_start,date_end,gwnob)
-  
+    select(country, region, country_id,year,deaths_a,deaths_b, deaths_civ, deaths_unk,date_start,date_end,gwnob)
+
 ged_disaggregated <-  ged181
 rm(ged181)
 rm(direct_link)
 unlink("ged181-shp.zip")
 
+
+#Dating
+ged_disaggregated <-  ged_disaggregated %>% 
+  mutate(date_start = as.Date(date_start),
+         date_end= as.Date(date_end),
+         mid = (date_start + floor((date_end-date_start)/2))) %>% 
+  separate(mid, c("year", "month", "day"), "-") %>% 
+  filter(is.na(gwnob))
+
+ged_disaggregated <-  ged_disaggregated %>% 
+  mutate(year=as.numeric(year),
+         month = as.numeric(month),
+         TotalDeaths = (deaths_a + deaths_b + deaths_civ + deaths_unk))
+
+
+
+
+#Creating the aggregated table + tidy
+
+CountryCodelistPanel <-  codelist_panel %>% 
+  select(country.name.en, p4n) %>% 
+  filter(!is.na(p4n))
+ged_base <-  unique(CountryCodelistPanel) %>% 
+  group_by(country.name.en,p4n) %>% 
+  expand(year= 1989:2017, month = 1:12)
+rm(CountryCodelistPanel)
+
+ged_agg <- ged_disaggregated %>% 
+  group_by(country_id,year, month) %>% 
+  summarize(deaths = sum(as.numeric(TotalDeaths)),
+            Incidents = as.numeric(n()),
+            sideA = sum(as.numeric(deaths_a)),
+            sideB = sum(as.numeric(deaths_b)))%>%  
+  arrange(country_id, year, month)
+
+ged_agg <- ged_base %>% 
+  left_join(ged_agg, by = c("p4n"="country_id", "year"="year", "month"="month")) 
+
+ged_agg <- ged_agg %>% 
+  mutate(deaths = coalesce(deaths,0)
+        ,Incidents = coalesce(Incidents,0)
+        ,sideA = coalesce(sideA,0)
+        ,sideB = coalesce(sideB,0))
+
+ged_agg <- ged_agg %>% 
+  group_by(p4n, year)%>% 
+    mutate(deaths_running_month= cumsum(deaths)
+           ,deathyear = sum(deaths)
+           ,deathsuma = sum(sideA)
+           ,deathsumb = sum(sideB)
+           ,cwy = ifelse(deathyear >=1000 & deathsuma + deathsumb >=200, 1,0)
+           ,cwm = ifelse(deaths_running_month>=83 & sideA + sideB >=100/12,1,0)) %>% 
+  arrange(country.name.en,year,month)
+
+
 #Writing to postgres
 dbWriteTable(con, "ged_disaggregated", 
              value = ged_disaggregated, overwrite = TRUE, row.names = FALSE)
-
-
-
+dbWriteTable(con, "ged_aggregated", 
+             value = ged_agg, overwrite = TRUE, row.names = FALSE)
+rm(ged_disaggregated,ged_agg)
 
 
 
@@ -199,18 +202,18 @@ iso2clist <- Country$iso2c
 #    GDP pr capita 2011 Ccnstant    #
 #####################################
 
-# problem da der n�rmenst ikke er nogen oplysnigner efter 1990
+# problem da der n?rmenst ikke er nogen oplysnigner efter 1990
 
 
 #GDP pr capita 2011 constant
 WDIsearch('gdp.*capita.*constant')
-WDI_GDPcapita2011c = WDI(indicator='NY.GDP.PCAP.PP.KD', start=1979, end=2017,  country = 'all') %>% 
+WDI_GDPcapita2011c = WDI(indicator='NY.GDP.PCAP.PP.KD', start=1989, end=2017,  country = 'all') %>% 
   filter(iso2c %in% iso2clist)
 
 dbWriteTable(con, "wdi_gdp", 
-             value = GDP_capita_2011c_country, overwrite = TRUE, row.names = FALSE)
+             value = WDI_GDPcapita2011c, overwrite = TRUE, row.names = FALSE)
 
-rm(GDP_capita_2011c_country)
+rm(WDI_GDPcapita2011c)
 
 
 
@@ -220,12 +223,12 @@ rm(GDP_capita_2011c_country)
 #####################################
 
 WDIsearch('expenditure')
-WDI_govexpenditure =  WDI(indicator ='NE.DAB.TOTL.ZS', start=1979, end=2017,  country = 'all') %>%   
+WDI_govexpenditure =  WDI(indicator ='NE.DAB.TOTL.ZS', start=1989, end=2017,  country = 'all') %>%   
 filter(iso2c %in% iso2clist)
 
 dbWriteTable(con, "wdi_gov_expenditure", 
-             value = gov_expenditure, overwrite = TRUE, row.names = FALSE)
-rm( gov_expenditure)
+             value = WDI_govexpenditure, overwrite = TRUE, row.names = FALSE)
+rm(WDI_govexpenditure)
 
 
 
@@ -234,12 +237,12 @@ rm( gov_expenditure)
 ####       Goverment debt         ###
 #####################################
 WDIsearch('debt')
-WDI_govdebt <-  WDI(indicator = 'GC.DOD.TOTL.GD.ZS', start=1979, end=2017,  country = 'all') %>%   
+WDI_govdebt <-  WDI(indicator = 'GC.DOD.TOTL.GD.ZS', start=1989, end=2017,  country = 'all') %>%   
   filter(iso2c %in% iso2clist)   # Central government debt, total (% of GDP)
 
 dbWriteTable(con, "wdi_gov_debt", 
-             value = GOV_debt, overwrite = TRUE, row.names = FALSE)
-rm(GOV_debt)
+             value = WDI_govdebt, overwrite = TRUE, row.names = FALSE)
+rm(WDI_govdebt)
 
 
 
@@ -247,7 +250,7 @@ rm(GOV_debt)
 # secondary male school enrollment  #
 #####################################
 WDIsearch('enrollment')
-WDI_enrollment <- WDI(indicator ="SE.SEC.NENR.MA", start=1979, end=2017,  country = 'all')%>%   
+WDI_enrollment <- WDI(indicator ="SE.SEC.NENR.MA", start=1989, end=2017,  country = 'all')%>%   
   filter(iso2c %in% iso2clist) #School enrollment, secondary, male (% net)
 
 
@@ -262,7 +265,7 @@ rm(WDI_enrollment)
 #####################################
 WDIsearch('land')
 
-WDI_arable_land <-  WDI(indicator ="AG.LND.ARBL.ZS", start = 1979, end = 2018,  country='all') %>%   
+WDI_arable_land <-  WDI(indicator ="AG.LND.ARBL.ZS", start = 1989, end = 2018,  country='all') %>%   
   filter(iso2c %in% iso2clist)
 
 dbWriteTable(con, "wdi_arable_land", 
@@ -277,7 +280,7 @@ rm(WDI_arable_land)
 # Exports of goods and services (% of GDP)                #
 #####################################
 WDIsearch('export')
-WDI_export_GS <-  WDI(indicator ="NE.EXP.GNFS.ZS", start = 1979, end = 2018,  country='all')%>%   
+WDI_export_GS <-  WDI(indicator ="NE.EXP.GNFS.ZS", start = 1989, end = 2018,  country='all')%>%   
   filter(iso2c %in% iso2clist)
 
 
@@ -295,7 +298,7 @@ rm(WDI_export_GS)
 #####################################
 
 WDIsearch('Fuels')
-WDI_export_FMM <-  WDI(indicator ="TX.VAL.FUEL.Zs.UN", start = 1979, end = 2018, country='all')%>%   
+WDI_export_FMM <-  WDI(indicator ="TX.VAL.FUEL.Zs.UN", start = 1989, end = 2018, country='all')%>%   
   filter(iso2c %in% iso2clist)
 
 dbWriteTable(con, "wdi_export_fmm", 
@@ -309,9 +312,8 @@ rm(WDI_export_FMM)
 #####################################
 WDIsearch('Merchandise exports')
 
-WDI_export_ME <-  WDI(indicator ="BX.GSR.MRCH.CD", start = 1979, end = 2018, country='all')%>%   
+WDI_export_ME <-  WDI(indicator ="BX.GSR.MRCH.CD", start = 1989, end = 2018, country='all')%>%   
   filter(iso2c %in% iso2clist)
-
 dbWriteTable(con, "wdi_export_me", 
              value = WDI_export_ME, overwrite = TRUE, row.names = FALSE)
 
@@ -324,13 +326,38 @@ rm(WDI_export_ME)
 #Population
 ###################################
 WDIsearch(string = "population", field = "name", short = TRUE)
-WDI_population <- WDI(country="all", indicator = 'SP.POP.TOTL', start =1979, end=2018)%>%   
+WDI_population <- WDI(country="all", indicator = 'SP.POP.TOTL', start =1989, end=2018)%>%   
   filter(iso2c %in% iso2clist)
 
 dbWriteTable(con, "wdi_population", 
              value = wdi_population, overwrite = TRUE, row.names = FALSE)
 
-rm( wdi_population)
+rm(WDI_population)
+
+
+
+###################################
+#Remittance
+###################################
+
+
+WDI_remittance_cd <- WDI(country="all", indicator = 'BX.TRF.MGR.CD', start =1989, end=2018)%>%   
+  filter(iso2c %in% iso2clist)
+
+dbWriteTable(con, "wdi_remitance_cd", 
+             value = WDI_remittance_cd, overwrite = TRUE, row.names = FALSE)
+
+WDI_remittance_gdp <- WDI(country="all", indicator = 'BX.TRF.MGR.DT.GD.ZS', start =1989, end=2018)%>%   
+  filter(iso2c %in% iso2clist)
+
+dbWriteTable(con, "wdi_remitance_gdp", 
+             value = WDI_remittance_gdp, overwrite = TRUE, row.names = FALSE)
+
+
+rm(WDI_remittance_gdp,WDI_remittance_cd)
+
+WDIsearch('remit')
+
 
 
 ##################################
