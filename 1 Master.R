@@ -11,7 +11,9 @@ DataCave = "C:/Users/Frederik/Documents/SpecialeData/"
 Private = "C:/Users/Frederik/Documents/SpecialeScripts/"
 GitHub = "C:/Users/Frederik/Documents/GitHub/Ethnic-Conflict-Prediction"
 Models = "C:/Users/Frederik/Documents/SpecialeModels/"
-
+Latexfigure ="C:/Users/Frederik/OneDrive - Københavns Universitet/Speciale paper/03_figures"
+Latextable= "C:/Users/Frederik/OneDrive - Københavns Universitet/Speciale paper/04_tables"
+  
 
 
 # This scripts binds the dataanalysis of my thesis. It aims to control 
@@ -30,8 +32,6 @@ source("3 Functions.R")
 source("4 PostGres_connect.R")
 
 #source("DataLoad.R")
-
-#source("DataTidy.R")
 
 source("DataGather.R")
 
