@@ -16,7 +16,7 @@ cat("\014")
 
 # install.packages("imputeTS")
 # library("imputeTS")
-# mice  pakken skal også ind 
+# mice  pakken skal ogs? ind 
 #
 
 #States
@@ -39,7 +39,9 @@ require("trellisscopejs")
 library("dplyr")
 library("tidyverse")
 library("data.table")
-
+library("forecast")
+library("zoo")
+library("xtable")
 
 #Getting data
 library("WDI") #world bank development indicators
@@ -48,11 +50,12 @@ library("psData") #Polity IV data
 library("pwt9")
 
 #visualisering
-library(ggplot2)
+library("ggplot2")
+library("ggthemes")
 
 # regression
-library(caret)
-library(xgboost)
+library("caret")
+library("xgboost")
 
 
 #functional programming
