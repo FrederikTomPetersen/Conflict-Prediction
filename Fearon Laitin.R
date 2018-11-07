@@ -44,3 +44,29 @@ religiousfractionalization <-  fldata %>%
 dbWriteTable(con, "fl_relfrac", 
              value = religiousfractionalization, append = TRUE, row.names = FALSE)
 
+
+
+
+
+
+
+
+
+
+
+##################################################
+#
+#               ethnicdata 1
+#
+
+
+
+direct_link <-  "https://web.stanford.edu/group/ethnic/publicdata/egroupsrepdata.zip"
+download.file(direct_link, basename(direct_link))
+unzip(basename(direct_link))
+
+
+
+data <- read.dta("egroupsrepdata.dta")
+
+
