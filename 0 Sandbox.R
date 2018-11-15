@@ -18,7 +18,6 @@ cat("\014")
 ##############################################
 
 #   Samling af WDI tabeller
-WDI_GDPcapita2011c <-  dbGetQuery(con, "SELECT * from wdi_gdp")
 WDI_arable_land <-  dbGetQuery(con, "SELECT * from wdi_arable_land")
 WDI_export_FMM <-  dbGetQuery(con, "SELECT * from wdi_export_fmm")
 WDI_export_GS <-  dbGetQuery(con, "SELECT * from wdi_export_gs")
@@ -28,11 +27,8 @@ WDI_gov_expenditure <-  dbGetQuery(con, "SELECT * from wdi_gov_expenditure")
 WDI_population <-  dbGetQuery(con, "SELECT * from wdi_population")
 WDI_enrollment <-  dbGetQuery(con, "SELECT * from wdi_secondary_male_enrollment")
 
-
-
-
 vars <-  c("iso2c","year", "NY.GDP.PCAP.PP.KD","NE.DAB.TOTL.ZS","SE.SEC.NENR.MA","AG.LND.ARBL.ZS","NE.EXP.GNFS.ZS","TX.VAL.FUEL.Zs.UN","BX.GSR.MRCH.CD", "SP.POP.TOTL")
-A_WDi_gather <-  WDI_GDPcapita2011c %>% 
+wdi <-  WDI_gdp %>% 
   left_join(WDI_gov_expenditure, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
   left_join(WDI_arable_land, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
   left_join(WDI_population, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
@@ -42,37 +38,103 @@ A_WDi_gather <-  WDI_GDPcapita2011c %>%
   left_join(WDI_enrollment, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
   select(vars)
 
+rm(WDI_gov_expenditure,WDI_gdp,WDI_arable_land,WDI_population,WDI_export_FMM,WDI_export_GS,WDI_export_ME,WDI_enrollment)
+
+wdi <- wdi %>% 
+  transmute(iso2c = iso2c,
+            year = year,
+            gdp = NY.GDP.PCAP.PP.KD,
+            arableland = AG.LND.ARBL.ZS,
+            secondary_school_male = SE.SEC.NENR.MA,
+            fuel = TX.VAL.FUEL.Zs.UN,
+            population= SP.POP.TOTL,
+            merc_export = BX.GSR.MRCH.CD,
+            goodservice_export = NE.EXP.GNFS.ZS
+            )
 
 
 
-imputed_Data <- mice(A_WDi_gather, m=5, maxit = 5, method = 'rf', seed = 1)
-
-
-
-
-#virker og giver den nærmenste værdi for gruppen
+#virker og giver den nærmenste værdi for gruppen #IKKE OPTIMALT
 setDT(WDI_arable_land)[, ValueInterp := if(length(na.omit(AG.LND.ARBL.ZS))<2) AG.LND.ARBL.ZS else na.approx(AG.LND.ARBL.ZS, na.rm=TRUE), iso2c]
-
 setDT(WDI_arable_land)[, ValueInterp2 := if(length(na.omit(AG.LND.ARBL.ZS))<2) AG.LND.ARBL.ZS else na.interp(AG.LND.ARBL.ZS), iso2c]
-
 setDT(WDI_arable_land)[, ValueInterp3 := if(length(na.omit(AG.LND.ARBL.ZS))<2) AG.LND.ARBL.ZS else na.interpolation(AG.LND.ARBL.ZS), iso2c]
-
-
 setDT(WDI_arable_land)[, ValueInterp4 := if(length(na.omit(AG.LND.ARBL.ZS))<2) AG.LND.ARBL.ZS else mice(AG.LND.ARBL.ZS$, m=5, maxit = 2, method = 'norm', seed = 1), iso2c]
 
 
 
 
-
-md.pattern(WDi_gather)
-mice_plot <- aggr(WDi_gather_grouped, col=c('navyblue','yellow'),
+#Viser mønsteret i missing data
+md.pattern(wdi)
+mice_plot <- aggr(wdi, col=c('navyblue','yellow'),
                     numbers=TRUE, sortVars=TRUE,
-                    labels=names(WDi_gather_grouped), cex.axis=.6,
+                    labels=names(wdi), cex.axis=.5,
                     gap=1, ylab=c("Missing data","Pattern"))
 
 
-imputed_Data <- mice(WDi_gather, m=5, maxit = 2, method = 'rf', seed = 1)
+
+md.pattern(Dataset)
+mice_plot <- aggr(Dataset, col=c('navyblue','yellow'),
+                  numbers=TRUE, sortVars=TRUE,
+                  labels=names(Dataset), cex.axis=.5,
+                  gap=1, ylab=c("Missing data","Pattern"))
+
+
+
+#guppering af tabel
+wdi_gather_group <- wdi %>% 
+  group_by(iso2c)
+
+
+#RF imputation
+imputed_Data <- mice(wdi_gather_group, m=5, maxit = 2, method = 'rf', seed = 1)
 summary(imputed_Data)
+
+
+
+
+
+
+
+
+#Mean imputation - kan foretages på variable, hvor jeg forventer en nogenlunde konstant værdi
+wdi_gather_group$arableland[is.na(wdi_gather_group$arableland)] <- ave(wdi_gather_group$arableland, 
+                                                                       wdi_gather_group$iso2c, 
+                                               FUN=function(x)mean(x, na.rm = T))[is.na(wdi_gather_group$arableland)]
+
+#funktionen reducere missing values fra 14% til 4% og kun de lande, hvor at jeg slet ikke har observationer har NA
+# Det er meget fint, og kan forsvares da man må forvente at den dyrkbare jord er konstant over tid
+
+
+
+
+
+# lineær imputation -kan foretages op variable, hvor jeg forventer et nogenlunde lineær udvikling indenfor landet over tid
+wdi$population[is.na(wdi$population)] <- impute_lm(wdi, population ~ year | iso2c)
+                                                   
+                                                 
+
+
+
+
+data(iris)
+irisNA <- iris
+irisNA[1:4, "Sepal.Length"] <- NA
+irisNA[3:7, "Sepal.Width"] <- NA
+
+# impute a single variable (Sepal.Length)
+i1 <- impute_lm(irisNA, Sepal.Length ~ Sepal.Width + Species)
+
+# impute both Sepal.Length and Sepal.Width, using robust linear regression
+i2 <- impute_rlm(irisNA, Sepal.Length + Sepal.Width ~ Species + Petal.Length)
+
+
+
+
+
+
+
+
+
 
 
 
@@ -108,6 +170,38 @@ WDI_arable_land <-  dbGetQuery(con, "SELECT * from wdi_arable_land")
 
 
 
+
+
+
+
+
+
+
+
+########################################################################
+#                         Variable search in WDI                       #
+########################################################################
+
+list <- WDIsearch('school')
+
+
+#SE.SEC.ENRR.MF = School Enroll. Ratio, secondary (%)
+#SE.SCH.LIFE.MA = Expected years of schooling, male
+#SE.PRM.NENR = School enrollment, primary (% net)
+#SE.PRM.ENRR.MF = School Enroll. Ratio, primary (%)
+#SE.PRM.ENRR.MA = School enrollment, primary, male (% gross)
+
+
+
+
+WDI_enrollment <- WDI(indicator ="SE.SEC.NENR.MA", start=1989, end=2017,  country = 'all')%>%   
+  filter(iso2c %in% iso2clist) #School enrollment, secondary, male (% net)
+
+
+dbWriteTable(con, "wdi_secondary_male_enrollment", 
+             value = WDI_enrollment, overwrite = TRUE, row.names = FALSE)
+
+rm(WDI_enrollment)
 
 
 
