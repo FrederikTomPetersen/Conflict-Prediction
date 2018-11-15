@@ -42,12 +42,23 @@ library("data.table")
 library("forecast")
 library("zoo")
 library("xtable")
+library("foreign")
+
+#imputing
+library("mice")
+library("VIM")
+library("simputation")
+
 
 #Getting data
 library("WDI") #world bank development indicators
 library("rWBclimate") # rWBclimate
 library("psData") #Polity IV data 
 library("pwt9")
+
+#geospatial
+library("sf")
+library("rgdal")
 
 #visualisering
 library("ggplot2")
