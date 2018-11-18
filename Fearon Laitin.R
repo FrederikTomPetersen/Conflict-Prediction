@@ -20,11 +20,15 @@ rm(data)
 
 
 
+fldata[fldata$ccode==100,] <- 99
+fldata[fldata$ccode==260,] <- 255 
+fldata[fldata$ccode==732,] <- 730 
+
 # Getting mountains
 mountains <- fldata %>% 
-  distinct(ccode, mtnest)  # vi har 161 obs
+  distinct(ccode, country, mtnest)  # vi har 161 obs
 dbWriteTable(con, "fl_mountains", 
-             value = mountains, append = TRUE, row.names = FALSE)
+             value = mountains, overwrite = TRUE, row.names = FALSE)
 
 
 
@@ -34,7 +38,7 @@ ethnicfractionalization <- fldata %>%
   distinct(ccode, ethfrac) #345 og 365 optræder to gange (Rusland og Jugoslavien) skal jeg abre tage middelværdien? 
 ethnicfractionalization <- ethnicfractionalization[-c(46,56),]
 dbWriteTable(con, "fl_ethnicfrac", 
-             value = ethnicfractionalization, append = TRUE, row.names = FALSE)
+             value = ethnicfractionalization, overwrite = TRUE, row.names = FALSE)
 
 
 
@@ -42,11 +46,13 @@ dbWriteTable(con, "fl_ethnicfrac",
 religiousfractionalization <-  fldata %>% 
   distinct(ccode,relfrac)
 dbWriteTable(con, "fl_relfrac", 
-             value = religiousfractionalization, append = TRUE, row.names = FALSE)
+             value = religiousfractionalization, overwrite = TRUE, row.names = FALSE)
 
 
 
-
+#Oilproduction 
+oil <-  fldata %>% 
+  distinct(ccode, oil)
 
 
 

@@ -72,7 +72,7 @@ mice_plot <- aggr(wdi, col=c('navyblue','yellow'),
 
 
 
-md.pattern(Dataset)
+
 mice_plot <- aggr(Dataset, col=c('navyblue','yellow'),
                   numbers=TRUE, sortVars=TRUE,
                   labels=names(Dataset), cex.axis=.5,
@@ -114,18 +114,6 @@ wdi$population[is.na(wdi$population)] <- impute_lm(wdi, population ~ year | iso2
                                                  
 
 
-
-
-data(iris)
-irisNA <- iris
-irisNA[1:4, "Sepal.Length"] <- NA
-irisNA[3:7, "Sepal.Width"] <- NA
-
-# impute a single variable (Sepal.Length)
-i1 <- impute_lm(irisNA, Sepal.Length ~ Sepal.Width + Species)
-
-# impute both Sepal.Length and Sepal.Width, using robust linear regression
-i2 <- impute_rlm(irisNA, Sepal.Length + Sepal.Width ~ Species + Petal.Length)
 
 
 
@@ -219,7 +207,7 @@ Country2 <- Country1 %>%
 c <-  Country2 %>% unlist
 
 PWT <- pwt9.0 %>% 
-  filter(year >= 1979 & isocode %in% c)
+  filter(year >= 1989 & isocode %in% c)
 
 
 vars <- c("hc", "xr", "rgdpe")

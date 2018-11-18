@@ -255,12 +255,87 @@ rm(EPR_ER)
 
 
 
+############################################################
+#                                                          #
+#               Ethnic fractionalization                   #
+#             Fearon Laitin dataset                        #
+#                                                          #
+############################################################
+
+
+setwd(DataCave)
+direct_link <-  "https://web.stanford.edu/group/ethnic/publicdata/repdata.zip"
+download.file(direct_link, basename(direct_link))
+unzip(basename(direct_link))
+
+
+# install.packages("foreign")
+# library(foreign)
+data <- read.dta("repdata.dta")
+
+fldata <- data %>%
+  select("ccode","country","year","pop","lpop","polity2","ef","ethfrac","sdwars","colwars","mtnest","Oil","relfrac")
+rm(data)
+
+
+
+fldata[fldata$ccode==100,] <- 99
+fldata[fldata$ccode==260,] <- 255 
+fldata[fldata$ccode==732,] <- 730 
+
+# Getting mountains
+mountains <- fldata %>% 
+  distinct(ccode, country, mtnest)  # vi har 161 obs
+dbWriteTable(con, "fl_mountains", 
+             value = mountains, overwrite = TRUE, row.names = FALSE)
 
 
 
 
+#Getting ethnic fractionalization
+ethnicfractionalization <- fldata %>% 
+  distinct(ccode, ethfrac) #345 og 365 optræder to gange (Rusland og Jugoslavien) skal jeg abre tage middelværdien? 
+ethnicfractionalization <- ethnicfractionalization[-c(46,56),]
+dbWriteTable(con, "fl_ethnicfrac", 
+             value = ethnicfractionalization, overwrite = TRUE, row.names = FALSE)
 
 
+
+#Getting religious fractionalization
+religiousfractionalization <-  fldata %>% 
+  distinct(ccode,relfrac)
+dbWriteTable(con, "fl_relfrac", 
+             value = religiousfractionalization, overwrite = TRUE, row.names = FALSE)
+
+
+
+
+############################################################
+#                                                          #
+#                       POLITY IV                          #
+#                                                          #
+#                                                          #
+############################################################
+
+
+Countries <-  codelist_panel %>% 
+  select(iso2c,p4n) %>%
+  filter(!is.na(p4n)) %>% 
+  distinct(iso2c,p4n)
+
+
+#Polity IV
+setwd(DataCave)
+DSN <- "http://www.systemicpeace.org/inscr/p4v2017.xls"
+download.file(DSN, "PolityIV.xls")
+PolityIV <- read_excel("p4v2017.xls") %>% 
+  filter(year>=1979) %>% 
+  left_join(Countries, by = c("ccode" = "p4n")) %>% 
+  select("country", "year", "democ", "autoc", "polity2", "iso2c", "ccode")
+
+dbWriteTable(con, "polity_4", 
+             value = PolityIV, overwrite = TRUE, row.names = FALSE)
+rm(PolityIV)
 
 
 
@@ -290,8 +365,8 @@ iso2clist <- Country$iso2c
 
 
 #GDP pr capita 2011 constant
-WDIsearch('gdp.*capita.*constant')
-WDI_GDPcapita2011c = WDI(indicator='NY.GDP.PCAP.PP.KD', start=1989, end=2017,  country = 'all') %>% 
+#WDIsearch('gdp.*capita.*constant')
+WDI_GDPcapita2011c = WDI(indicator='NY.GDP.PCAP.PP.KD', start=1989, end=2017,  country = 'all', extra = T) %>% 
   filter(iso2c %in% iso2clist)
 
 dbWriteTable(con, "wdi_gdp", 
