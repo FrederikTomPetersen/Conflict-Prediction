@@ -52,9 +52,9 @@ Gdelt_getter_1 = function(x, m) {
     Table <-  Table %>%
       select(myvars2)
     
-    Table <- QuadClasser(Table)
+    Table <- QuadClasser2(Table)
     
-    dbWriteTable(con, "gdelt_y_2", 
+    dbWriteTable(con, "gdelt_y", 
                  value = Table, append = TRUE, row.names = FALSE)
     
     rm(Table)
@@ -64,7 +64,7 @@ Gdelt_getter_1 = function(x, m) {
     print(paste("Dette er download række nummer", m))
     m = m + 1
     print(Sys.time())
-    Sys.sleep(10)
+    Sys.sleep(5)
   }
 }
 
@@ -98,7 +98,7 @@ Gdelt_getter_2 = function(x, m) {
     Table <-  rel_eth(Table)
     Table <-  Table %>%
       select(myvars2)
-    Table <- QuadClasser(Table)
+    Table <- QuadClasser2(Table)
     
     dbWriteTable(con, "gdelt_y_m_2", 
                  value = Table, append = TRUE, row.names = FALSE)
@@ -146,7 +146,7 @@ Gdelt_getter_3 = function(x, m) {
     Table <-  rel_eth(Table)
     Table <-  Table %>%
       select(myvars2)
-    Table <- QuadClasser(Table)
+    Table <- QuadClasser2(Table)
     
         dbWriteTable(con, "gdelt_y_m_d", 
                  value = Table, append = TRUE, row.names = FALSE)
@@ -253,6 +253,7 @@ Coerce <- as.numeric(c("170","171","1711","1712","172","1721","1722","1723","172
 Non_lethalViolence <-  as.numeric(c("181","1821"))
 Occupy_block <- as.numeric(c("191","192"))
 
+rm(Demand_help,Demand_political_change,Exhibit_force,Occupy_block,Disaprove,Rejction_of_demand,Threaten,Protest,Reduce_relations,Coerce,Non_lethalViolence)
 
 Event_Classifier = function(x){
   output <- x %>% 
@@ -439,5 +440,26 @@ QuadClasser2 = function(x){
     )
   return(x)
 }
+
+
+# Rolling deviation to construct deviation from mean in a specific time interval
+
+rolling_deviation = function(df, group_var, var, months){
+  
+  groupvar_q <- enquo(group_var)
+  variable_q <- enquo(var)
+  varname <- quo_name(variable_q)
+  timename <- toString(months)
+  dummy_name <- paste0("rm_",timename, "_", varname)
+  
+  
+  df %>% 
+    group_by(!! groupvar_q) %>% 
+    mutate(
+      !! dummy_name := RcppRoll::roll_meanr(lag(!! variable_q), months, fill = NA)
+    )
+}
+
+
 
 #Funktionen virker efter hensigten.

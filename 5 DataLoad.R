@@ -29,14 +29,14 @@ myvars2 <- c("GLOBALEVENTID","year", "month", "Actor1Code", "Actor2Code", "Actor
 
 All_eventdb_url <-  get_urls_gdelt_event_log()
 Event_url_list <- All_eventdb_url$urlData 
-Events <- Event_url_list[2:28]
+Events <- Event_url_list[12:28]
 
 setwd(DataCave)
 Gdelt_header  <-  fread("GDELT_HEADER.csv")
 Gdelt_header <-  Gdelt_header$`Field Name`
 collist <- Gdelt_header[1:57]
 
-# Gdelt_getter_1(Events,1)
+#Gdelt_getter_1(Events,1)
 
 
 ############################################################
@@ -62,7 +62,7 @@ Gdelt_header  <-  fread("GDELT_HEADER.csv")
 Gdelt_header <-  Gdelt_header$`Field Name`
 collist <- Gdelt_header[1:57]
 
-# Gdelt_getter_2(Events,1)
+#Gdelt_getter_2(Events,1)
 
 
 
@@ -82,8 +82,15 @@ myvars <- c("GLOBALEVENTID", "SQLDATE", "MonthYear", "Actor1Code", "Actor2Code",
 myvars2 <- c("GLOBALEVENTID","year", "month", "Actor1Code", "Actor2Code", "Actor1CountryCode", "Actor2CountryCode","Actor1Type1Code","Actor2Type1Code", "Actor1Geo_CountryCode","Actor2Geo_CountryCode", "IsRootEvent", "EventCode", "EventBaseCode", "EventRootCode","QuadClass", "GoldsteinScale", "NumMentions", "AvgTone", "ActionGeo_CountryCode", "Actor1Religion1Code","Actor2Religion1Code", "Actor1EthnicCode","Actor2EthnicCode","rel", "eth")
 
 All_eventdb_url <-  get_urls_gdelt_event_log()
-Event_url_list <- All_eventdb_url$urlData 
-Events <- Event_url_list[116:1845] # slutter 31/12-2017
+Event_url_list <- All_eventdb_url$urlData
+
+#Events <- Event_url_list[116:1845] # slutter 31/12-2017 Nedbydes for at spare plads på CPU og HDD
+#Events <-  Event_url_list[116:751] 
+#Events <-  Event_url_list[752:1116] #2015
+#Events <-  Event_url_list[1117:1482] #2016
+#Events <-  Event_url_list[1483:1845] #2017
+
+
 
 setwd(DataCave)
 Gdelt_header  <-  fread("GDELT_HEADER.csv")
@@ -91,10 +98,45 @@ Gdelt_header <-  Gdelt_header$`Field Name`
 collist <- Gdelt_header[1:58]
 
 
-# Gdelt_getter_3(Events,1039)
+#Gdelt_getter_3(Events,1)
+
+#-----------------------------------------------------------------------------  
+#-----------------------------------------------------------------------------
+
+#Denne blok køres efter at al gdelt data er indlæst i postgresdb og grupperet
+
+#variable, der skal beholdes:
+vars  <-  c("country", "year", "month", "q1at","q1cnt","q1gs", "q2at","q2cnt","q2gs", "q3at","q3cnt", "q3gs", "q4at","q4cnt","q4gs", "relq1at", "relq1cnt", "relq1gs", "relq2at", "relq2cnt", "relq2gs", "relq3at", "relq3cnt","relq3gs", "relq4at", "relq4cnt", "relq4gs", "ethq1at", "ethq1cnt","ethq1gs", "ethq2at", "ethq2cnt","ethq2gs", "ethq3at", "ethq3cnt", "ethq3gs", "ethq4at", "ethq4cnt", "ethq4gs")
 
 
-  
+#indhentning af data fra postgresdb
+groupy <-  dbGetQuery(con, "SELECT * from gdelt_y_group") %>% 
+  select(vars)
+
+groupym <-  dbGetQuery(con, "SELECT * from gdelt_y_m_group") %>% 
+  select(vars)
+
+groupymd1 <-  dbGetQuery(con, "SELECT * from gdelt_ymd_group_1") %>% 
+  select(vars)
+
+groupymd2 <-  dbGetQuery(con, "SELECT * from gdelt_ymd_group_2") %>% 
+  select(vars)
+
+groupymd3 <-  dbGetQuery(con, "SELECT * from gdelt_ymd_group_3") %>% 
+  select(vars)
+
+groupymd4 <-  dbGetQuery(con, "SELECT * from gdelt_ymd_group_4") %>% 
+  select(vars)
+
+merged <- rbind(groupy, groupym, groupymd1, groupymd2,groupymd3,groupymd4)
+
+
+dbWriteTable(con, "gdelt_group_complete", 
+             value = merged, overwrite = TRUE, row.names = FALSE)
+
+rm(groupy, groupym, groupymd1, groupymd2,groupymd3,groupymd4, vars, merged)
+
+
 
 ############################################################
 #                                                          #
@@ -123,7 +165,7 @@ ged_disaggregated <-  ged_disaggregated %>%
          date_end= as.Date(date_end),
          mid = (date_start + floor((date_end-date_start)/2))) %>% 
   separate(mid, c("year", "month", "day"), "-") %>% 
-  filter(is.na(gwnob))
+  filter(is.na(gwnob)) #sikre at der kun kommer interne konflikter med i data
 
 ged_disaggregated <-  ged_disaggregated %>% 
   mutate(year=as.numeric(year),
@@ -177,8 +219,6 @@ dbWriteTable(con, "ged_disaggregated",
 dbWriteTable(con, "ged_aggregated", 
              value = ged_agg, overwrite = TRUE, row.names = FALSE)
 rm(ged_disaggregated,ged_agg)
-
-
 
 
 ############################################################
@@ -278,14 +318,15 @@ fldata <- data %>%
 rm(data)
 
 
+fldata$ccode[fldata$ccode==260] <- 255 
+fldata$ccode[fldata$ccode==732] <- 730 
 
-fldata[fldata$ccode==100,] <- 99
-fldata[fldata$ccode==260,] <- 255 
-fldata[fldata$ccode==732,] <- 730 
+fldata <- fldata
 
 # Getting mountains
 mountains <- fldata %>% 
   distinct(ccode, country, mtnest)  # vi har 161 obs
+
 dbWriteTable(con, "fl_mountains", 
              value = mountains, overwrite = TRUE, row.names = FALSE)
 
@@ -308,7 +349,64 @@ dbWriteTable(con, "fl_relfrac",
              value = religiousfractionalization, overwrite = TRUE, row.names = FALSE)
 
 
+#oil
+oil <- fldata %>% 
+  filter(year >= 1989) %>% 
+  distinct(ccode, Oil) %>% 
+  group_by(ccode) %>% 
+  filter(row_number() == 2)
 
+oil <- fldata %>% 
+  filter(year >= 1989) %>% 
+  distinct(ccode, Oil) %>% 
+  group_by(ccode) %>% 
+  filter(row_number() == 1)
+
+#Change in oilstatus during time period - apllying latest information
+oil$Oil[oil$ccode==99] <- 1
+oil$Oil[oil$ccode==471] <- 1
+oil$Oil[oil$ccode==651] <- 1
+oil$Oil[oil$ccode==679] <- 1
+oil$Oil[oil$ccode==690] <- 1
+
+
+dbWriteTable(con, "fl_oil", 
+             value = oil, overwrite = TRUE, row.names = FALSE)
+
+rm(fldata, religiousfractionalization,mountains,ethnicfractionalization,oil)
+
+
+
+
+
+
+
+
+
+############################################################
+#                                                          #
+#                    Colonial history                      #
+#                                                          #
+#                                                          #
+############################################################
+
+setwd(DataCave)
+direct_link <-  "http://www.paulhensel.org/Data/colhist.zip"
+download.file(direct_link, basename(direct_link))
+unzip(basename(direct_link))
+colhist <-  fread("ICOW Colonial History 1.1/coldata110.csv")
+
+colbase <-  colhist %>% 
+  select(State, Name, ColRuler) %>% 
+  distinct() 
+
+col <- colbase %>% mutate(colstyle = ifelse(ColRuler ==  200, 1, ifelse(ColRuler == 220, 2, ifelse(ColRuler==-9,-9, 0)))) %>% 
+  transmute(p4n = State, colstyle =colstyle)
+
+dbWriteTable(con, "col_hist", 
+             value = col, overwrite = TRUE, row.names = FALSE)
+
+rm(colhist,colbase, col)
 
 ############################################################
 #                                                          #
@@ -327,15 +425,47 @@ Countries <-  codelist_panel %>%
 #Polity IV
 setwd(DataCave)
 DSN <- "http://www.systemicpeace.org/inscr/p4v2017.xls"
-download.file(DSN, "PolityIV.xls")
-PolityIV <- read_excel("p4v2017.xls") %>% 
-  filter(year>=1979) %>% 
+#download.file(DSN, "PolityIV.sav") # PolityIV server er ustabil så der er risiko for at downloade en beskadiget fil..
+
+PolityIV = read_xls("PolityIV.xls")
+PolityIV <-  PolityIV %>%  
+  filter(year>=1989) %>% 
   left_join(Countries, by = c("ccode" = "p4n")) %>% 
-  select("country", "year", "democ", "autoc", "polity2", "iso2c", "ccode")
+  select("country", "year", "democ", "autoc", "polity2", "xrreg","xrcomp","xropen","xconst", "iso2c", "ccode")
 
 dbWriteTable(con, "polity_4", 
              value = PolityIV, overwrite = TRUE, row.names = FALSE)
-rm(PolityIV)
+rm(PolityIV, Countries)
+
+############################################################
+#                                                          #
+#                  Area of countries                       #
+#                                                          #
+#                                                          #
+############################################################
+
+
+
+setwd(DataCave)
+direct_link <-  "http://thematicmapping.org/downloads/TM_WORLD_BORDERS-0.3.zip"
+download.file(direct_link, basename(direct_link))
+unzip(basename(direct_link))
+
+countries_area <-  sf::read_sf("TM_WORLD_BORDERS-0.3.shp", crs = 4326) %>% 
+  select(ISO2, AREA)
+
+rm(direct_link)
+unlink("TM_WORLD_BORDERS-0.3.zip")
+
+dbWriteTable(con, "area", 
+             value = countries_area, overwrite = TRUE, row.names = FALSE)
+rm(countries_area)
+
+
+
+
+
+
 
 
 
@@ -352,71 +482,70 @@ Country <-  codelist_panel %>%
   filter(!is.na(iso2c))
 
 iso2clist <- Country$iso2c
-
+rm(Country)
 
 
 
 
 #####################################
-#    GDP pr capita 2011 Ccnstant    #
-#####################################
+#       Growth and welfare    
+#
 
-# problem da der n?rmenst ikke er nogen oplysnigner efter 1990
+WDI_GDPcapita2011c = WDI(indicator='NY.GDP.PCAP.PP.KD', start=1989, end=2017,  country = 'all') %>% 
+  filter(iso2c %in% iso2clist) #GDP pr capita 2011 constant
 
+WDI_GDP_CD <- WDI(indicator ="NY.GDP.MKTP.CD", start=1989, end=2017,  country = 'all')%>% 
+  filter(iso2c %in% iso2clist) # accepter obs loss -  GDP current $
 
-#GDP pr capita 2011 constant
-#WDIsearch('gdp.*capita.*constant')
-WDI_GDPcapita2011c = WDI(indicator='NY.GDP.PCAP.PP.KD', start=1989, end=2017,  country = 'all', extra = T) %>% 
-  filter(iso2c %in% iso2clist)
+WDI_growth <- WDI(indicator ="NY.GDP.MKTP.KD.ZG", start=1989, end=2017,  country = 'all')%>% 
+  filter(iso2c %in% iso2clist) # accepter obs loss - growth annual %
+
 
 dbWriteTable(con, "wdi_gdp", 
              value = WDI_GDPcapita2011c, overwrite = TRUE, row.names = FALSE)
+dbWriteTable(con, "wdi_gdp_cd", 
+             value = WDI_GDP_CD, overwrite = TRUE, row.names = FALSE)
+dbWriteTable(con, "wdi_growth", 
+             value = WDI_growth, overwrite = TRUE, row.names = FALSE)
 
-rm(WDI_GDPcapita2011c)
+rm(WDI_GDPcapita2011c,WDI_GDP_CD,WDI_growth)
 
+#####################################
+#     Trade
+#
 
+WDI_trade <- WDI(indicator ="NE.TRD.GNFS.ZS", start=1989, end=2017,  country = 'all')%>% 
+  filter(iso2c %in% iso2clist) #Trade (% of GDP)  # keep og accepter tab af observationer 
+
+WDI_import_gs <- WDI(indicator ="NE.IMP.GNFS.ZS", start=1989, end=2017,  country = 'all')%>% 
+  filter(iso2c %in% iso2clist) #Imports of goods and services (% of GDP) - Behold og accepter tab af observationer
+
+dbWriteTable(con, "wdi_trade", 
+             value = WDI_trade, overwrite = TRUE, row.names = FALSE)
+dbWriteTable(con, "wdi_import_gs", 
+             value = WDI_import_gs, overwrite = TRUE, row.names = FALSE)
+
+rm(WDI_trade,WDI_import_gs)
 
 
 #####################################
-####    Goverment expenditure     ###
-#####################################
+#     School enrollmentment         
+#
 
-WDIsearch('expenditure')
-WDI_govexpenditure =  WDI(indicator ='NE.DAB.TOTL.ZS', start=1989, end=2017,  country = 'all') %>%   
-filter(iso2c %in% iso2clist)
-
-dbWriteTable(con, "wdi_gov_expenditure", 
-             value = WDI_govexpenditure, overwrite = TRUE, row.names = FALSE)
-rm(WDI_govexpenditure)
-
-
-
-
-#####################################
-####       Goverment debt         ###
-#####################################
-WDIsearch('debt')
-WDI_govdebt <-  WDI(indicator = 'GC.DOD.TOTL.GD.ZS', start=1989, end=2017,  country = 'all') %>%   
-  filter(iso2c %in% iso2clist)   # Central government debt, total (% of GDP)
-
-dbWriteTable(con, "wdi_gov_debt", 
-             value = WDI_govdebt, overwrite = TRUE, row.names = FALSE)
-rm(WDI_govdebt)
-
-
-
-#####################################
-# secondary male school enrollment  #
-#####################################
-WDIsearch('enrollment')
+#WDIsearch('enrollment')
 WDI_enrollment <- WDI(indicator ="SE.SEC.NENR.MA", start=1989, end=2017,  country = 'all')%>%   
   filter(iso2c %in% iso2clist) #School enrollment, secondary, male (% net)
 
+WDI_enrollment_secondary <-  WDI(indicator = "SE.SEC.ENRR", start =1989, end =2017, country = 'all')%>% 
+  filter(iso2c %in% iso2clist) # Behold+ locf
 
 dbWriteTable(con, "wdi_secondary_male_enrollment", 
              value = WDI_enrollment, overwrite = TRUE, row.names = FALSE)
+dbWriteTable(con, "wdi_secondary_enrollment", 
+             value = WDI_enrollment_secondary, overwrite = TRUE, row.names = FALSE)
 
-rm(WDI_enrollment)
+
+rm(WDI_enrollment,WDI_enrollment_secondary)
 
 
 #####################################
@@ -424,7 +553,7 @@ rm(WDI_enrollment)
 #####################################
 WDIsearch('land')
 
-WDI_arable_land <-  WDI(indicator ="AG.LND.ARBL.ZS", start = 1989, end = 2018,  country='all') %>%   
+WDI_arable_land <-  WDI(indicator ="AG.LND.ARBL.ZS", start = 1989, end = 2017,  country='all') %>%   
   filter(iso2c %in% iso2clist)
 
 dbWriteTable(con, "wdi_arable_land", 
@@ -435,87 +564,19 @@ rm(WDI_arable_land)
 # AG.LND.ARBL.ZS = Arable land (% of land area)
 
 
-#####################################
-# Exports of goods and services (% of GDP)                #
-#####################################
-WDIsearch('export')
-WDI_export_GS <-  WDI(indicator ="NE.EXP.GNFS.ZS", start = 1989, end = 2018,  country='all')%>%   
-  filter(iso2c %in% iso2clist)
-
-
-dbWriteTable(con, "wdi_export_gs", 
-             value = WDI_export_GS, overwrite = TRUE, row.names = FALSE)
-
-rm(WDI_export_GS)
-
-
-# "NE.EXP.GNFS.ZS"= Exports of goods and services (% of GDP)
-
-
-#####################################
-# Fuels, minerals, and metals                #
-#####################################
-
-WDIsearch('Fuels')
-WDI_export_FMM <-  WDI(indicator ="TX.VAL.FUEL.Zs.UN", start = 1989, end = 2018, country='all')%>%   
-  filter(iso2c %in% iso2clist)
-
-dbWriteTable(con, "wdi_export_fmm", 
-             value = WDI_export_FMM, overwrite = TRUE, row.names = FALSE)
-
-rm(WDI_export_FMM)
-# "TX.VAL.FMTL.UN.ZS"= Fuels, minerals, and metals (% of merchandise exports)
-
-#####################################
-# Merchandise exports (BOP): percentage of GDP (%)                #
-#####################################
-WDIsearch('Merchandise exports')
-
-WDI_export_ME <-  WDI(indicator ="BX.GSR.MRCH.CD", start = 1989, end = 2018, country='all')%>%   
-  filter(iso2c %in% iso2clist)
-dbWriteTable(con, "wdi_export_me", 
-             value = WDI_export_ME, overwrite = TRUE, row.names = FALSE)
-
-rm(WDI_export_ME)
-
-
-# ""BX.GSR.MRCH.ZS""= Merchandise exports (BOP): percentage of GDP (%)
 
 ###################################
 #Population
 ###################################
-WDIsearch(string = "population", field = "name", short = TRUE)
-WDI_population <- WDI(country="all", indicator = 'SP.POP.TOTL', start =1989, end=2018)%>%   
+#WDIsearch(string = "population", field = "name", short = TRUE)
+
+WDI_population <- WDI(country="all", indicator = 'SP.POP.TOTL', start =1989, end=2017) %>%   
   filter(iso2c %in% iso2clist)
 
 dbWriteTable(con, "wdi_population", 
-             value = wdi_population, overwrite = TRUE, row.names = FALSE)
+             value = WDI_population, overwrite = TRUE, row.names = FALSE)
 
 rm(WDI_population)
-
-
-
-###################################
-#Remittance
-###################################
-
-
-WDI_remittance_cd <- WDI(country="all", indicator = 'BX.TRF.MGR.CD', start =1989, end=2018)%>%   
-  filter(iso2c %in% iso2clist)
-
-dbWriteTable(con, "wdi_remitance_cd", 
-             value = WDI_remittance_cd, overwrite = TRUE, row.names = FALSE)
-
-WDI_remittance_gdp <- WDI(country="all", indicator = 'BX.TRF.MGR.DT.GD.ZS', start =1989, end=2018)%>%   
-  filter(iso2c %in% iso2clist)
-
-dbWriteTable(con, "wdi_remitance_gdp", 
-             value = WDI_remittance_gdp, overwrite = TRUE, row.names = FALSE)
-
-
-rm(WDI_remittance_gdp,WDI_remittance_cd)
-
-WDIsearch('remit')
 
 
 

@@ -17,101 +17,92 @@ cat("\014")
 
 ##############################################
 
-#   Samling af WDI tabeller
-WDI_arable_land <-  dbGetQuery(con, "SELECT * from wdi_arable_land")
-WDI_export_FMM <-  dbGetQuery(con, "SELECT * from wdi_export_fmm")
-WDI_export_GS <-  dbGetQuery(con, "SELECT * from wdi_export_gs")
-WDI_export_ME <-  dbGetQuery(con, "SELECT * from wdi_export_me")
-WDI_gdp <-  dbGetQuery(con, "SELECT * from wdi_gdp")
-WDI_gov_expenditure <-  dbGetQuery(con, "SELECT * from wdi_gov_expenditure")
-WDI_population <-  dbGetQuery(con, "SELECT * from wdi_population")
-WDI_enrollment <-  dbGetQuery(con, "SELECT * from wdi_secondary_male_enrollment")
+#col hist
+setwd(DataCave)
+direct_link <-  "http://www.paulhensel.org/Data/colhist.zip"
+download.file(direct_link, basename(direct_link))
+unzip(basename(direct_link))
+colhist <-  fread("ICOW Colonial History 1.1/coldata110.csv")
 
-vars <-  c("iso2c","year", "NY.GDP.PCAP.PP.KD","NE.DAB.TOTL.ZS","SE.SEC.NENR.MA","AG.LND.ARBL.ZS","NE.EXP.GNFS.ZS","TX.VAL.FUEL.Zs.UN","BX.GSR.MRCH.CD", "SP.POP.TOTL")
-wdi <-  WDI_gdp %>% 
-  left_join(WDI_gov_expenditure, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
-  left_join(WDI_arable_land, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
-  left_join(WDI_population, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
-  left_join(WDI_export_FMM, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
-  left_join(WDI_export_GS, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
-  left_join(WDI_export_ME, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
-  left_join(WDI_enrollment, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
-  select(vars)
+colbase <-  colhist %>% 
+  select(State, Name, ColRuler) %>% 
+  distinct() 
 
-rm(WDI_gov_expenditure,WDI_gdp,WDI_arable_land,WDI_population,WDI_export_FMM,WDI_export_GS,WDI_export_ME,WDI_enrollment)
+col <- colbase %>% mutate(colstyle = ifelse(ColRuler ==  200, 1, ifelse(ColRuler == 220, 2, ifelse(ColRuler==-9,-9, 0)))) %>% 
+  transmute(p4n = State, colstyle =colstyle)
 
-wdi <- wdi %>% 
-  transmute(iso2c = iso2c,
-            year = year,
-            gdp = NY.GDP.PCAP.PP.KD,
-            arableland = AG.LND.ARBL.ZS,
-            secondary_school_male = SE.SEC.NENR.MA,
-            fuel = TX.VAL.FUEL.Zs.UN,
-            population= SP.POP.TOTL,
-            merc_export = BX.GSR.MRCH.CD,
-            goodservice_export = NE.EXP.GNFS.ZS
-            )
+dbWriteTable(con, "col_hist", 
+             value = col, overwrite = TRUE, row.names = FALSE)
+
+rm(colhist,colbase, col)
 
 
 
-#virker og giver den nærmenste værdi for gruppen #IKKE OPTIMALT
-setDT(WDI_arable_land)[, ValueInterp := if(length(na.omit(AG.LND.ARBL.ZS))<2) AG.LND.ARBL.ZS else na.approx(AG.LND.ARBL.ZS, na.rm=TRUE), iso2c]
-setDT(WDI_arable_land)[, ValueInterp2 := if(length(na.omit(AG.LND.ARBL.ZS))<2) AG.LND.ARBL.ZS else na.interp(AG.LND.ARBL.ZS), iso2c]
-setDT(WDI_arable_land)[, ValueInterp3 := if(length(na.omit(AG.LND.ARBL.ZS))<2) AG.LND.ARBL.ZS else na.interpolation(AG.LND.ARBL.ZS), iso2c]
-setDT(WDI_arable_land)[, ValueInterp4 := if(length(na.omit(AG.LND.ARBL.ZS))<2) AG.LND.ARBL.ZS else mice(AG.LND.ARBL.ZS$, m=5, maxit = 2, method = 'norm', seed = 1), iso2c]
+# landlocked
+setwd(DataCave)
+#run link in browser
+direct_link <- "http://worldmap.harvard.edu/download/wfs/12432/csv?outputFormat=csv&service=WFS&request=GetFeature&format_options=charset%3AUTF-8&typename=geonode%3Alandlocked_countries_q8r&version=1.0.0"
+landlocked <- fread("landlocked_countries_q8r.csv") %>% 
+  select(ISO_A2, ISO_A3, TYPE, ADMIN) %>% 
+  filter(TYPE == "Sovereign country")
+
+dbWriteTable(con, "landlocked", 
+             value = col, landlocked = TRUE, row.names = FALSE)
+
+rm(landlocked)
+
+# pre-colonial ethnic groups 
+devtools::install_github("sboysel/murdock")
+library(murdock)
 
 
 
+#---------------------------------------------------------------------------------------------
+#
+#                              Construction of density histogram + ROC curve
+#
 
-#Viser mønsteret i missing data
-md.pattern(wdi)
-mice_plot <- aggr(wdi, col=c('navyblue','yellow'),
-                    numbers=TRUE, sortVars=TRUE,
-                    labels=names(wdi), cex.axis=.5,
-                    gap=1, ylab=c("Missing data","Pattern"))
+# Funktion til fravelægning af FP,FN, SP, SN
+plot_pred_type_distribution <- function(df, threshold) {
+  v <- rep(NA, nrow(df))
+  v <- ifelse(df$linear >= threshold & df$cwm == 1, "TP", v)
+  v <- ifelse(df$linear >= threshold & df$cwm == 0, "FP", v)
+  v <- ifelse(df$linear < threshold & df$cwm == 1, "FN", v)
+  v <- ifelse(df$linear < threshold & df$cwm == 0, "TN", v)
+}
+# Tilførelse af FP,FN,SP,SN til datasæt 
+test_data$pred_type <- plot_pred_type_distribution(test_data, 0.125)
 
-
-
-
-mice_plot <- aggr(Dataset, col=c('navyblue','yellow'),
-                  numbers=TRUE, sortVars=TRUE,
-                  labels=names(Dataset), cex.axis=.5,
-                  gap=1, ylab=c("Missing data","Pattern"))
-
-
-
-#guppering af tabel
-wdi_gather_group <- wdi %>% 
-  group_by(iso2c)
-
-
-#RF imputation
-imputed_Data <- mice(wdi_gather_group, m=5, maxit = 2, method = 'rf', seed = 1)
-summary(imputed_Data)
-
-
-
-
+TP = test_data %>% 
+  filter(pred_type =="TP") %>% 
+         mutate(TP = n())
+FP = test_data %>% 
+  filter(pred_type =="FP") %>% 
+  mutate(FP = n())
+TN = test_data %>% 
+  filter(pred_type =="TN") %>% 
+  mutate(TN = n())
+FN = test_data %>% 
+  filter(pred_type =="FN") %>% 
+  mutate(FN = n())
 
 
-
-
-#Mean imputation - kan foretages på variable, hvor jeg forventer en nogenlunde konstant værdi
-wdi_gather_group$arableland[is.na(wdi_gather_group$arableland)] <- ave(wdi_gather_group$arableland, 
-                                                                       wdi_gather_group$iso2c, 
-                                               FUN=function(x)mean(x, na.rm = T))[is.na(wdi_gather_group$arableland)]
-
-#funktionen reducere missing values fra 14% til 4% og kun de lande, hvor at jeg slet ikke har observationer har NA
-# Det er meget fint, og kan forsvares da man må forvente at den dyrkbare jord er konstant over tid
-
-
-
-
-
-# lineær imputation -kan foretages op variable, hvor jeg forventer et nogenlunde lineær udvikling indenfor landet over tid
-wdi$population[is.na(wdi$population)] <- impute_lm(wdi, population ~ year | iso2c)
-                                                   
-                                                 
+#Plotting af densitet histogram med jitter og linje
+test_data %>%
+  group_by(linear) %>% 
+  ggplot(aes(as.factor(cwm),linear)) +
+  geom_violin(mapping = NULL, data = test_data, stat = "ydensity",
+              position = "dodge", draw_quantiles = NULL, trim = TRUE,
+              scale = "area", na.rm = TRUE, show.legend = TRUE,
+              inherit.aes = TRUE)+
+  geom_jitter(aes(color=pred_type),data= test_data, alpha=0.2, width = 0.4)+
+  geom_hline(yintercept=0.125, color="red", alpha=0.6)+
+  labs( y = "Prædikteret sandsynlighed for borgerkrig", x="") +
+  scale_x_discrete(breaks=c("0","1"),
+                     labels=c("ikke-borgerkrig \n y = 0", "Borgerkrig \n y = 1"))
+  
+setwd(Latexfigure)
+ggsave(filename = "Density_histogram.pdf" )
 
 
 
@@ -122,37 +113,67 @@ wdi$population[is.na(wdi$population)] <- impute_lm(wdi, population ~ year | iso2
 
 
 
+calculate_roc <- function(df, cost_of_fp, cost_of_fn, n=100) {
+  tpr <- function(df, threshold) {
+    sum(df$linear >= threshold & df$cwm == 1) / sum(df$cwm == 1)
+  }
+  
+  fpr <- function(df, threshold) {
+    sum(df$linear >= threshold & df$cwm == 0) / sum(df$cwm == 0)
+  }
+  
+  cost <- function(df, threshold, cost_of_fp, cost_of_fn) {
+    sum(df$linear >= threshold & df$cwm == 0) * cost_of_fp + 
+      sum(df$linear < threshold & df$cwm == 1) * cost_of_fn
+  }
+  
+  roc <- data.frame(threshold = seq(0,1,length.out=n), tpr=NA, fpr=NA)
+  roc$tpr <- sapply(roc$threshold, function(th) tpr(df, th))
+  roc$fpr <- sapply(roc$threshold, function(th) fpr(df, th))
+  roc$cost <- sapply(roc$threshold, function(th) cost(df, th, cost_of_fp, cost_of_fn))
+  
+  return(roc)
+}
+
+roc <- calculate_roc(test_data, 1, 2, n = 100)
+
+plot_roc(roc, 0.7, 1, 2)
 
 
 
 
 
- install.packages("imputeTS")
- library("imputeTS")
-na.random(mydata)                  # Random Imputation
-na.locf(mydata, option = "locf")   # Last Obs. Carried Forward
-na.locf(mydata, option = "nocb")   # Next Obs. Carried Backward
-na.interpolation(mydata)           # Linear Interpolation
-na.interp()
-na.seadec(mydata, algorithm = "interpolation") # Seasonal Adjustment then Linear Interpolation
 
 
+plot_roc <- function(roc, threshold, cost_of_fp, cost_of_fn) {
+  library(gridExtra)
+  
+  norm_vec <- function(v) (v - min(v))/diff(range(v))
+  
+  idx_threshold = which.min(abs(roc$threshold-threshold))
+  
+  col_ramp <- colorRampPalette(c("green","orange","red","black"))(100)
+  col_by_cost <- col_ramp[ceiling(norm_vec(roc$cost)*99)+1]
+  p_roc <- ggplot(roc, aes(fpr,tpr)) + 
+    geom_line(color=rgb(0,0,1,alpha=0.3)) +
+    geom_point(color=col_by_cost, size=4, alpha=0.5) +
+    coord_fixed() +
+    geom_line(aes(threshold,threshold), color=rgb(0,0,1,alpha=0.5)) +
+    labs(title = sprintf("ROC")) + xlab("FPR") + ylab("TPR") +
+    geom_hline(yintercept=roc[idx_threshold,"tpr"], alpha=0.5, linetype="dashed") +
+    geom_vline(xintercept=roc[idx_threshold,"fpr"], alpha=0.5, linetype="dashed")
+  
+  p_cost <- ggplot(roc, aes(threshold, cost)) +
+    geom_line(color=rgb(0,0,1,alpha=0.3)) +
+    geom_point(color=col_by_cost, size=4, alpha=0.5) +
+    labs(title = sprintf("cost function")) +
+    geom_vline(xintercept=threshold, alpha=0.5, linetype="dashed")
+  
+  sub_title <- sprintf("threshold at %.2f - cost of FP = %d, cost of FN = %d", threshold, cost_of_fp, cost_of_fn)
+  
+  grid.arrange(p_roc, p_cost, ncol=2, sub=textGrob(sub_title, gp=gpar(cex=1), just="bottom"))
+}
 
-
-WDi_gather_grouped <- A_WDi_gather %>% 
-  select("iso2c", "year", "SP.POP.TOTL","AG.LND.ARBL.ZS")
-
-
-
-
-
-ara_group <-  WDI_arable_land %>% 
-  group_by(iso2c)
-ara_impute <- mice(ara_group, m=5, maxit = 10, method = 'rf', seed = 1)
-summary(ara_impute)
-c <-  complete(ara_impute)
-
-WDI_arable_land <-  dbGetQuery(con, "SELECT * from wdi_arable_land")
 
 
 
@@ -169,27 +190,77 @@ WDI_arable_land <-  dbGetQuery(con, "SELECT * from wdi_arable_land")
 ########################################################################
 #                         Variable search in WDI                       #
 ########################################################################
+CountryCodelistPanel <-  codelist_panel %>% 
+  select(country.name.en,iso3c, p4n, fips) %>% 
+  filter(!is.na(p4n), !is.na(iso3c), !is.na(fips))
 
-list <- WDIsearch('school')
+CountryCodelistPanel <-  unique(CountryCodelistPanel)
+CountryCodelistPanel <- CountryCodelistPanel
+
+StatesBase <-  CountryCodelistPanel %>% 
+  group_by(country.name.en, iso3c,p4n,fips) %>% 
+  expand(year= 1989:2017, month = 1:12) # giver en tabel med 36936 country-months
+rm(CountryCodelistPanel)
+
+#list <- WDIsearch('GDP')
+
+WDI_enrollment_primary_male <- WDI(indicator ="SE.PRM.ENRR.MA", start=1989, end=2017,  country = 'all')%>% 
+  filter(iso2c %in% iso2clist) #Behold + locf
+
+WDI_enrollment_primary <-  WDI(indicator = "SE.PRM.ENRR", start =1989, end =2017, country = 'all')%>% 
+  filter(iso2c %in% iso2clist) # Behold+ locf
 
 
-#SE.SEC.ENRR.MF = School Enroll. Ratio, secondary (%)
-#SE.SCH.LIFE.MA = Expected years of schooling, male
-#SE.PRM.NENR = School enrollment, primary (% net)
-#SE.PRM.ENRR.MF = School Enroll. Ratio, primary (%)
-#SE.PRM.ENRR.MA = School enrollment, primary, male (% gross)
+
+# = Services: contribution to growth of GDP (%)
+#NP.IND.TOTL.ZG = Industry: contribution to growth of GDP (%)
+#NP.AGR.TOTL.ZG = Agriculture: contribution to growth of GDP (%)
+#NE.TRD.GNFS.ZS = Trade (% of GDP)
+#NE.IMP.GNFS.ZS = Imports of goods and services (% of GDP)
+
+#NY.GDP.MKTP.CD  = GDP current $
+#NY.GDP.MKTPKD.KD.ZG = growth annual %
+#NY.GDP.PCAP.CD = GDP pr capita current dollar
+#NY.GDP.PCAP.KD.ZG = annual growth pr capita. 
+
+#problemer med download
 
 
+WDI_ <- WDI(indicator ="NE.IMP.GNFS.ZS", start=1989, end=2017,  country = 'all')%>% 
+  filter(iso2c %in% iso2clist) #Behold + locf
 
 
-WDI_enrollment <- WDI(indicator ="SE.SEC.NENR.MA", start=1989, end=2017,  country = 'all')%>%   
-  filter(iso2c %in% iso2clist) #School enrollment, secondary, male (% net)
+test <- StatesBase %>% 
+  left_join(WDI_, by = c("iso2c"="iso2c", "year" = "year"))
+
+mice_plot <- aggr(wdi, col=c('navyblue','yellow'),
+                  numbers=TRUE, sortVars=TRUE,
+                  labels=names(wdi), cex.axis=.5,
+                  gap=1, ylab=c("Missing data","Pattern"))
+
+tjek <- test %>% 
+  group_by(fips) %>% 
+  na.locf(test$NE.IMP.GNFS.ZS, fromLast) 
+
+mice_plot <- aggr(tjek, col=c('navyblue','yellow'),
+                  numbers=TRUE, sortVars=TRUE,
+                  labels=names(tjek), cex.axis=.5,
+                  gap=1, ylab=c("Missing data","Pattern"))
 
 
-dbWriteTable(con, "wdi_secondary_male_enrollment", 
-             value = WDI_enrollment, overwrite = TRUE, row.names = FALSE)
+#imputation on wdi
 
-rm(WDI_enrollment)
+#Mean imputation - kan foretages på variable, hvor jeg forventer en nogenlunde konstant værdi eksempelvis arable land
+wdi$arableland[is.na(wdi$arableland)] <- ave(wdi$arableland, 
+                                             wdi$iso2c, 
+                                             FUN=function(x)mean(x, na.rm = T))[is.na(wdi$arableland)]
+
+
+# lineær imputation kan foretages på variable, der har en lineær udvikling
+
+wdi <- wdi %>%
+  group_by(iso2c) %>%
+  impute_lm(population ~ year) 
 
 
 
@@ -249,71 +320,9 @@ mice_plot <- aggr(PWT, col=c('navyblue','yellow'),
 ########################################################################
 
 
-#Grouped mean imputation
-grouped_mean_imputation <- function(df, group_var, impute_var){
-
-  keys_q <- enquo(group_var)
-  values_q <- enquo(impute_var)
-  varname <- quo_name(values_q)
-  dummy_name <- paste0("imputed_", varname)
-  
-  df %>%
-    group_by(!! keys_q) %>%
-    mutate(
-      !! dummy_name := case_when(is.na(!! values_q) ~ 1,
-                                 T ~ 0), 
-      !! varname := case_when(is.na(!! values_q) ~ fixed_mean(!! values_q),
-                              T ~ !! values_q)
-    ) 
-}
-
-# This last bit is just to show that it works
-RESULT <- grouped_mean_imputation(WDI, countryName, gov_debt)
-
-
-
-
-
-# Grouped linear model imputation
-grouped_lm_imputation = function(col, df){
-  key_q <-  enquo(col)
-  
-df <- df
-interpolationsmodel <- lm(!! col ~ country + year, 
-                          data = df, 
-                          na.action=na.omit)
-
-df$col[is.na(df$col)] <-  predict(interpolationsmodel, newdata = df)
-return(df)
-}
-
-
-
-
-
-
-
 
 ###############################################################################################
 
-Countries <-  codelist_panel %>% 
-  select(iso2c,p4n) %>%
-  filter(!is.na(p4n)) %>% 
-  distinct(iso2c,p4n)
-
-
-#Polity IV
-setwd(DataCave)
-DSN <- "http://www.systemicpeace.org/inscr/p4v2017.xls"
-download.file(DSN, "PolityIV.xls")
-PolityIV <- read_excel("p4v2017.xls") %>% 
-  filter(year>=1979) %>% 
-  left_join(Countries, by = c("ccode" = "p4n")) %>% 
-  select("country", "year", "democ", "autoc", "polity2", "iso2c", "ccode")
-
-dbWriteTable(con, "polity_4", 
-             value = PolityIV, overwrite = TRUE, row.names = FALSE)
-rm(PolityIV)
 
 
 
@@ -340,104 +349,6 @@ ggplot(aes(x = year, y = deathyear/1000)) +
   scale_shape_manual(15) +
   scale_x_continuous(breaks=c(1989,1995,2000,2005,2010,2015,2017)) +
   scale_y_continuous(breaks= c(25,50,100,200,300,400,500,600))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-###############################
-  WDIsearch('NY.GDP.PCAP.CD')
-WDI_GDP <- WDI(indicator ="NY.GDP.PCAP.CD", start=1989, end=2017,  country = 'all')%>%   
-  filter(iso2c %in% iso2clist) # 621 af værdierne af NA
-
-
-a <- is.na(WDI_GDP$NY.GDP.PCAP.CD)
-b <- WDI_GDP[a,]
-
-dbWriteTable(con, "wdi_secondary_male_enrollment", 
-             value = WDI_enrollment, overwrite = TRUE, row.names = FALSE)
-
-rm(WDI_enrollment)
-
-
-
-
-
-
-
-
-
-#################################################3
-#growth
-
-
-CountryCodelistPanel <-  codelist_panel %>% 
-  select(country.name.en,iso3c, p4n, fips) %>% 
-  filter(!is.na(p4n), !is.na(iso3c), !is.na(fips))
-
-
-WDIsearch('growth')
-WDI_growth = WDI(indicator='NY.GDP.MKTP.KD.ZG', start=1989, end=2017,  country = 'all') %>% 
-  filter(iso2c %in% iso2clist)
-
-sort <-  CountryCodelistPanel %>% 
-  select(p4n, fips)
-
-gedconflict <- GedAggregated %>% 
-  filter(cwy==1) %>% 
-  distinct(p4n) %>% 
-  left_join(sort, by=c("p4n"="p4n"))
-
-a <-  GedAggregated %>%
-  distinct(p4n) %>% 
-  right_join(!gedconflict, by=c("p4n"="p4n"))
-
-conflict <- WDI_growth %>% 
-  filter(iso2c %in% gedconflict$fips & !is.na(NY.GDP.MKTP.KD.ZG))
-growthinconflict <- mean(conflict$NY.GDP.MKTP.KD.ZG)
-
-noconflilct <- WDI_growth %>% 
-  filter(!iso2c %in% gedconflict$fips & !is.na(NY.GDP.MKTP.KD.ZG))
-growthinpeace <-  mean(noconflilct$NY.GDP.MKTP.KD.ZG)
-
-
-'%ni%' <- Negate("%in%")
-
-
-
-
-#################       Samlet tabel Gdelt      ##########################################
-
-vars  <-  c("country", "year", "month", "q1at","q1cnt", "q2at","q2cnt", "q3at","q3cnt", "q4at","q4cnt", "relq1at", "relq1cnt", "relq2at", "relq2cnt", "relq3at", "relq3cnt", "relq4at", "relq4cnt", "ethq1at", "ethq1cnt", "ethq2at", "ethq2cnt", "ethq3at", "ethq3cnt", "ethq4at", "ethq4cnt")
-group1 <-  dbGetQuery(con, "SELECT * from gdelt_y_group") %>% 
-  select(vars)
-group2 <-  dbGetQuery(con, "SELECT * from gdelt_y_m_group") %>% 
-  select(vars)
-group3 <-  dbGetQuery(con, "SELECT * from gdelt_y_m_d_group") %>% 
-  select(vars)
-merged <- rbind(group1, group2, group3)
-
-dbWriteTable(con, "gdelt_group27", 
-             value = merged, append = TRUE, row.names = FALSE)
-rm(group1, group2, group3, merged)
-
-grouped <-  dbGetQuery(con, "SELECT * from gdelt_group27")
-  
-
-##############################
 
 
 
@@ -485,9 +396,6 @@ temp_stats <- get_ensemble_stats(Country_2l, "mavg", ppt_days)
 #####################################################################
 ###               Tidying the Gdeltdataset                        ###
 #####################################################################
-Gdelt1 <- gdelt_tidier(Gdelt1) %>% 
-  mutate(date = as.Date(paste0(year, '.', month, '.', 1), format = "%Y.%m.%d"))
-Gdelt1 <-  Gdelt_Keeper(Gdelt1)
 
 
 
@@ -537,4 +445,172 @@ install.packages("rJava")
 library(rJava)
 install.packages("psData")
 library("psData")
+
+
+
+#WDI data der er frasorteret
+
+
+
+#####################################
+####    Goverment expenditure     ###
+#####################################
+
+WDIsearch('expenditure')
+WDI_govexpenditure =  WDI(indicator ='NE.DAB.TOTL.ZS', start=1989, end=2017,  country = 'all') %>%   
+  filter(iso2c %in% iso2clist)
+
+dbWriteTable(con, "wdi_gov_expenditure", 
+             value = WDI_govexpenditure, overwrite = TRUE, row.names = FALSE)
+rm(WDI_govexpenditure)
+
+
+
+
+#####################################
+####       Goverment debt         ###
+#####################################
+WDIsearch('debt')
+WDI_govdebt <-  WDI(indicator = 'GC.DOD.TOTL.GD.ZS', start=1989, end=2017,  country = 'all') %>%   
+  filter(iso2c %in% iso2clist)   # Central government debt, total (% of GDP)
+
+dbWriteTable(con, "wdi_gov_debt", 
+             value = WDI_govdebt, overwrite = TRUE, row.names = FALSE)
+rm(WDI_govdebt)
+
+
+
+#####################################
+# Exports of goods and services (% of GDP)                #
+#####################################
+WDIsearch('export')
+WDI_export_GS <-  WDI(indicator ="NE.EXP.GNFS.ZS", start = 1989, end = 2018,  country='all')%>%   
+  filter(iso2c %in% iso2clist)
+
+
+dbWriteTable(con, "wdi_export_gs", 
+             value = WDI_export_GS, overwrite = TRUE, row.names = FALSE)
+
+rm(WDI_export_GS)
+
+
+# "NE.EXP.GNFS.ZS"= Exports of goods and services (% of GDP)
+
+
+#####################################
+# Fuels, minerals, and metals                #
+#####################################
+
+WDIsearch('Fuels')
+WDI_export_FMM <-  WDI(indicator ="TX.VAL.FUEL.Zs.UN", start = 1989, end = 2018, country='all')%>%   
+  filter(iso2c %in% iso2clist)
+
+dbWriteTable(con, "wdi_export_fmm", 
+             value = WDI_export_FMM, overwrite = TRUE, row.names = FALSE)
+
+rm(WDI_export_FMM)
+# "TX.VAL.FMTL.UN.ZS"= Fuels, minerals, and metals (% of merchandise exports)
+
+#####################################
+# Merchandise exports (BOP): percentage of GDP (%)                #
+#####################################
+WDIsearch('Merchandise exports')
+
+WDI_export_ME <-  WDI(indicator ="BX.GSR.MRCH.CD", start = 1989, end = 2018, country='all')%>%   
+  filter(iso2c %in% iso2clist)
+dbWriteTable(con, "wdi_export_me", 
+             value = WDI_export_ME, overwrite = TRUE, row.names = FALSE)
+
+rm(WDI_export_ME)
+
+
+# ""BX.GSR.MRCH.ZS""= Merchandise exports (BOP): percentage of GDP (%)
+
+
+
+###################################
+#Remittance
+###################################
+
+
+WDI_remittance_cd <- WDI(country="all", indicator = 'BX.TRF.MGR.CD', start =1989, end=2018)%>%   
+  filter(iso2c %in% iso2clist)
+
+dbWriteTable(con, "wdi_remitance_cd", 
+             value = WDI_remittance_cd, overwrite = TRUE, row.names = FALSE)
+
+WDI_remittance_gdp <- WDI(country="all", indicator = 'BX.TRF.MGR.DT.GD.ZS', start =1989, end=2018)%>%   
+  filter(iso2c %in% iso2clist)
+
+dbWriteTable(con, "wdi_remitance_gdp", 
+             value = WDI_remittance_gdp, overwrite = TRUE, row.names = FALSE)
+
+
+rm(WDI_remittance_gdp,WDI_remittance_cd)
+
+WDIsearch('remit')
+
+
+
+
+
+
+
+
+
+
+
+
+
+timeline <-completedata %>%
+  filter(cwy == 1) %>%
+  group_by(country, year) %>%
+  arrange(country, year, month) %>% 
+  filter(row_number() == 1) %>%
+  group_by(country) %>%
+  mutate(is_contiguous = (year -1==lag(year))) 
+
+timeline <- timeline %>%
+  mutate(is_contiguous = case_when(is.na(is_contiguous) ~ FALSE,
+                                   TRUE~is_contiguous)) %>%
+  mutate(gvar = cumsum(!is_contiguous)) %>%
+  group_by(country, gvar) %>%
+  mutate(minyear = min(year),
+         maxyear = max(year)) %>%
+  ungroup() %>%
+  filter(is_contiguous == F | is.na(is_contiguous))
+
+
+
+timeline$country = as.factor(timeline$country.name.en)
+timeline$country = fct_reorder(timeline$country, -timeline$minyear)
+
+
+ggplot(timeline) +
+  geom_segment(aes(x=minyear, xend=maxyear, y=country, yend=country), size=0.8) +
+  geom_point(mapping=aes(x=minyear, y=country), size=2, shape=21, fill="white") +
+  geom_point(mapping=aes(x=maxyear, y=country), size=2, shape=21, fill="white")+
+  theme_classic() +
+  theme(legend.position="right",panel.background = element_blank())+
+  theme(plot.title = element_text(hjust = 0.5), panel.grid.major.y = element_line(color = "grey80"))+
+  theme(text = element_text(size=8, lineheight=10)) +
+  labs(y = "", x="") +
+  scale_color_gradient() +
+  theme(axis.text=element_text(size=8),
+        axis.title=element_text(size=10,face="bold")) +
+  scale_x_continuous(breaks=c(1989,1995,2000,2005,2010,2015,2017)) 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

@@ -11,16 +11,19 @@ cat("\014")
 ##############################################
 
 CountryCodelistPanel <-  codelist_panel %>% 
-  select(country.name.en,iso3c, p4n, fips) %>% 
-  filter(!is.na(p4n), !is.na(iso3c), !is.na(fips))
+  select(country.name.en,iso3c, iso2c, p4n, fips) %>% 
+  filter(!is.na(p4n), !is.na(iso3c), !is.na(fips), !is.na(iso2c))
 
 CountryCodelistPanel <-  unique(CountryCodelistPanel)
 CountryCodelistPanel <- CountryCodelistPanel
 
 StatesBase <-  CountryCodelistPanel %>% 
-  group_by(country.name.en, iso3c,p4n,fips) %>% 
+  group_by(country.name.en, iso3c,p4n,fips,iso2c) %>% 
   expand(year= 1989:2017, month = 1:12) # giver en tabel med 36936 country-months
 rm(CountryCodelistPanel)
+
+
+# I dette data ligger der en række dubeletter ( colombia, tyskland, korea, bare for at vælge et par stykker. Her skal jeg lave en frasortering!)
 
 
 
@@ -84,18 +87,20 @@ rm(epr_er)
 fl_mnt <-  dbGetQuery(con, "SELECT * from fl_mountains")
 fl_eth <-  dbGetQuery(con, "SELECT * from fl_ethnicfrac")
 fl_rel <-  dbGetQuery(con, "SELECT * from fl_relfrac")
+fl_oil <-  dbGetQuery(con, "SELECT * from fl_oil")
 
 Dataset <- Dataset %>% 
   left_join(fl_mnt, by = c("p4n" = "ccode")) %>% 
   left_join(fl_eth, by = c("p4n" = "ccode")) %>% 
-  left_join(fl_rel, by = c("p4n" = "ccode"))
+  left_join(fl_rel, by = c("p4n" = "ccode")) %>% 
+  left_join(fl_oil, by = c("p4n" = "ccode"))
 
 noinfo <- Dataset %>% 
   filter(is.na(mtnest)) %>% 
-  select(country.name.en.x, iso3c,p4n,fips) %>% 
+  select(country.name.en.x, iso3c,p4n,fips,iso2c) %>% 
   unique()
 
-rm(fl_mnt, fl_rel, fl_eth, noinfo)
+rm(fl_mnt, fl_rel, fl_eth, fl_oil, noinfo)
 
 
 ##############################################
@@ -104,79 +109,112 @@ rm(fl_mnt, fl_rel, fl_eth, noinfo)
 
 polity4 <-  dbGetQuery(con, "SELECT * from polity_4")
 Dataset <- Dataset %>% 
-  left_join(polity4, by = c("p4n" = "ccode", "year"="year"))
+  left_join(polity4, by = c("iso2c" = "iso2c", "year"="year"))
 
 Dataset <-  Dataset %>% 
   mutate(polity2 = ifelse(is.na(polity2), -66, polity2),
          autoc = ifelse(is.na(autoc), -66, autoc),
-         democ = ifelse(is.na(democ), -66, democ))
+         democ = ifelse(is.na(democ), -66, democ)) %>% 
+  select(-ccode)
 
 noinfo1 <- Dataset %>% 
   filter(is.na(democ)) %>% 
   select(country.name.en.x, iso3c,p4n,fips) %>% 
   unique()
 
-rm(polity4)
+rm(polity4, noinfo1)
+
+
+
+##############################################
+#  Adding area to Dataset
+##############################################
+
+
+area <- dbGetQuery(con, "SELECT * from area") %>% 
+  select(-geometry)
+
+Dataset <- Dataset %>% 
+  left_join(area, by = c("iso2c" = "ISO2")) 
 
 
 ##############################################
 #  Adding WDI to Dataset
 ##############################################
 
+wdi_population <-  dbGetQuery(con, "SELECT * from wdi_population") %>%
+  select(-country) %>% 
+  group_by(iso2c) %>%
+  impute_lm(SP.POP.TOTL ~ year) 
+
+
 wdi_arable_land <-  dbGetQuery(con, "SELECT * from wdi_arable_land") %>% 
+  select(-country) 
+
+wdi_arable_land <- wdi_arable_land %>% 
+  group_by(iso2c) %>% 
+  na.locf(is.na(wdi_arable_land$AG.LND.ARBL.ZS), fromLast=T)
+
+
+#human capital ~ school
+wdi_secondary_enrollment <- dbGetQuery(con, "SELECT * from wdi_secondary_enrollment") %>% 
   select(-country)
-wdi_export_fmm <-  dbGetQuery(con, "SELECT * from wdi_export_fmm") %>% 
+wdi_secondary_enrollment <-  wdi_secondary_enrollment %>% 
+  group_by(iso2c) %>% 
+  na.locf(is.na(wdi_secondary_enrollment$SE.SEC.ENRR), fromLast=T)
+
+
+wdi_secondary_enrollment_male <- dbGetQuery(con, "SELECT * from wdi_secondary_male_enrollment") %>% 
   select(-country)
-wdi_export_gs <-  dbGetQuery(con, "SELECT * from wdi_export_gs") %>% 
+wdi_secondary_enrollment_male <- wdi_secondary_enrollment_male %>% 
+  group_by(iso2c) %>% 
+  na.locf(is.na(wdi_secondary_enrollment_male$SE.SEC.NENR.MA), fromLast=T)
+
+
+
+#Trade
+wdi_trade <-  dbGetQuery(con, "SELECT * from wdi_trade") %>% 
   select(-country)
-wdi_export_me <-  dbGetQuery(con, "SELECT * from wdi_export_me") %>% 
+wdi_import_gs <-  dbGetQuery(con, "SELECT * from wdi_import_gs") %>% 
   select(-country)
+
+
+#Growth and welfare
 wdi_gdp <-  dbGetQuery(con, "SELECT * from wdi_gdp") %>% 
   select(-country)
-wdi_population <-  dbGetQuery(con, "SELECT * from wdi_population") %>% 
+wdi_gdp_cd <-  dbGetQuery(con, "SELECT * from wdi_gdp_cd") %>% 
   select(-country)
-wdi_secondary_male_enrollment <-  dbGetQuery(con, "SELECT * from wdi_secondary_male_enrollment") %>% 
+wdi_growth <-  dbGetQuery(con, "SELECT * from wdi_growth") %>% 
   select(-country)
 
 
-wdi <-  wdi_gdp %>%  
+
+wdi <-  wdi_population %>%  
   left_join(wdi_arable_land, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
-  left_join(wdi_population, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
-  left_join(wdi_export_fmm, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
-  left_join(wdi_export_gs, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
-  left_join(wdi_export_me, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
-  left_join(wdi_secondary_male_enrollment, by = c("iso2c" = "iso2c", "year" = "year"))
+  left_join(wdi_gdp, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
+  left_join(wdi_gdp_cd, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
+  left_join(wdi_growth, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
+  left_join(wdi_trade, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
+  left_join(wdi_import_gs, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
+  left_join(wdi_secondary_enrollment, by = c("iso2c" = "iso2c", "year" = "year")) %>% 
+  left_join(wdi_secondary_enrollment_male, by = c("iso2c" = "iso2c", "year" = "year")) 
 
-rm(wdi_arable_land,wdi_export_fmm,wdi_export_gs,wdi_export_me,wdi_gdp,wdi_population,wdi_secondary_male_enrollment)
 
+rm(wdi_population,wdi_arable_land,wdi_gdp,wdi_gdp_cd,wdi_growth,wdi_trade,wdi_import_gs,wdi_secondary_enrollment,wdi_secondary_enrollment_male)
 
 wdi <- wdi %>% 
-  transmute(iso2c = iso2c,
+  transmute(
             year = year,
-            gdp = NY.GDP.PCAP.PP.KD,
+            gdp_p_ca = NY.GDP.PCAP.PP.KD,
+            gdp_cd = NY.GDP.MKTP.CD,
+            growth = NY.GDP.MKTP.KD.ZG,
             arableland = AG.LND.ARBL.ZS,
+            secondary_school = SE.SEC.ENRR,
             secondary_school_male = SE.SEC.NENR.MA,
-            fuel = TX.VAL.FUEL.Zs.UN,
+            trade = NE.TRD.GNFS.ZS,
             population= SP.POP.TOTL,
-            merc_export = BX.GSR.MRCH.CD,
-            goodservice_export = NE.EXP.GNFS.ZS
+            import_gs = NE.IMP.GNFS.ZS
   )
-
-#imputation on wdi
-
-#Mean imputation - kan foretages på variable, hvor jeg forventer en nogenlunde konstant værdi eksempelvis arable land
-wdi$arableland[is.na(wdi$arableland)] <- ave(wdi$arableland, 
-                                             wdi$iso2c, 
-                                             FUN=function(x)mean(x, na.rm = T))[is.na(wdi$arableland)]
-
-
-# lineær imputation kan foretages på variable, der har en lineær udvikling
-  
-wdi <- wdi %>%
-  group_by(iso2c) %>%
-  impute_lm(population ~ year) 
-
-
 
 
 
@@ -188,8 +226,7 @@ rm(wdi)
 ##############################################
 #  Joining Gdelt to Dataset
 ##############################################
-gdelt <-  dbGetQuery(con, "SELECT * from gdelt_group27") %>% 
-  filter(year >=1989)
+gdelt <-  dbGetQuery(con, "SELECT * from gdelt_group_complete") 
 
 # I tilfælde af overlappen observationer
 gdelt <- gdelt %>%
@@ -197,10 +234,209 @@ gdelt <- gdelt %>%
   filter(row_number() == 1)
 
 
-
 Dataset <-  Dataset %>% 
   left_join(gdelt, by = c("iso2c"= "country", "year"="year", "month"="month")) 
 rm(gdelt)
+
+
+##############################################
+#  Fixing data types and imputing 0 too no obs data
+##############################################
+
+
+#fixing the NA <- 0
+Dataset <- Dataset %>% 
+  mutate(deaths = coalesce(deaths,0),
+        Incidents = coalesce(Incidents,0),
+        sideA = coalesce(sideA,0),
+        sideB = coalesce(sideB,0),
+        deaths_running_month = coalesce(deaths_running_month,0),
+        deathyear = coalesce(deathyear,0),
+        deathsuma = coalesce(deathsuma,0),
+        deathsumb = coalesce(deathsumb,0),
+        cwy = coalesce(cwy,0),
+        cwm = coalesce(cwm,0)
+        )
+
+Dataset <-  Dataset %>% 
+  mutate(
+    q1at = coalesce(q1at,0),
+    q1cnt  = coalesce(q1cnt,0),
+    q1gs  = coalesce(q1gs,0),
+    q2at  = coalesce(q2at,0),
+    q2cnt  = coalesce(q2cnt,0),
+    q2gs  = coalesce(q2gs,0),
+    q3at  = coalesce(q3at,0),
+    q3cnt  = coalesce(q3cnt,0),
+    q3gs  = coalesce(q3gs,0),
+    q4at  = coalesce(q4at,0),
+    q4cnt = coalesce(q4cnt,0),
+    q4gs = coalesce(q4gs,0),
+    
+    ethq1at = coalesce(ethq1at,0),
+    ethq1cnt = coalesce(ethq1cnt,0),
+    ethq1gs = coalesce(ethq1gs,0),
+    ethq2at = coalesce(ethq2at,0),
+    ethq2cnt = coalesce(ethq2cnt,0),
+    ethq2gs = coalesce(ethq2gs,0),
+    ethq3at = coalesce(ethq3at,0),
+    ethq3cnt = coalesce(ethq3cnt,0),
+    ethq3gs = coalesce(ethq3gs,0),
+    ethq4at = coalesce(ethq4at,0),
+    ethq4cnt = coalesce(ethq4cnt,0),
+    ethq4gs = coalesce(ethq4gs,0),
+    
+    relq1at = coalesce(relq1at,0),
+    relq1cnt = coalesce(relq1cnt,0),
+    relq1gs = coalesce(relq1gs,0),
+    relq2at = coalesce(relq2at,0),
+    relq2cnt = coalesce(relq2cnt,0),
+    relq2gs = coalesce(relq2gs,0),
+    relq3at = coalesce(relq3at,0),
+    relq3cnt = coalesce(relq3cnt,0),
+    relq3gs = coalesce(relq3gs,0),
+    relq4at = coalesce(relq4at,0),
+    relq4cnt = coalesce(relq4cnt,0),
+    relq4gs = coalesce(relq4gs,0)
+  )
+
+
+
+
+#Creating means for previous periods
+
+#---------------------------
+# 6 months 
+Dataset <- rolling_deviation(Dataset, p4n, q1cnt, 6)
+Dataset <- rolling_deviation(Dataset, p4n, q2cnt, 6)
+Dataset <- rolling_deviation(Dataset, p4n, q3cnt, 6)
+Dataset <- rolling_deviation(Dataset, p4n, q4cnt, 6)
+Dataset <- rolling_deviation(Dataset, p4n, relq1cnt, 6)
+Dataset <- rolling_deviation(Dataset, p4n, relq2cnt, 6)
+Dataset <- rolling_deviation(Dataset, p4n, relq3cnt, 6)
+Dataset <- rolling_deviation(Dataset, p4n, relq4cnt, 6)
+Dataset <- rolling_deviation(Dataset, p4n, ethq1cnt, 6)
+Dataset <- rolling_deviation(Dataset, p4n, ethq2cnt, 6)
+Dataset <- rolling_deviation(Dataset, p4n, ethq3cnt, 6)
+Dataset <- rolling_deviation(Dataset, p4n, ethq4cnt, 6)
+
+Dataset <- rolling_deviation(Dataset, p4n, q1at, 6)
+Dataset <- rolling_deviation(Dataset, p4n, q2at, 6)
+Dataset <- rolling_deviation(Dataset, p4n, q3at, 6)
+Dataset <- rolling_deviation(Dataset, p4n, q4at, 6)
+Dataset <- rolling_deviation(Dataset, p4n, relq1at, 6)
+Dataset <- rolling_deviation(Dataset, p4n, relq2at, 6)
+Dataset <- rolling_deviation(Dataset, p4n, relq3at, 6)
+Dataset <- rolling_deviation(Dataset, p4n, relq4at, 6)
+Dataset <- rolling_deviation(Dataset, p4n, ethq1at, 6)
+Dataset <- rolling_deviation(Dataset, p4n, ethq2at, 6)
+Dataset <- rolling_deviation(Dataset, p4n, ethq3at, 6)
+Dataset <- rolling_deviation(Dataset, p4n, ethq4at, 6)
+
+Dataset <- rolling_deviation(Dataset, p4n, q1gs, 6)
+Dataset <- rolling_deviation(Dataset, p4n, q2gs, 6)
+Dataset <- rolling_deviation(Dataset, p4n, q3gs, 6)
+Dataset <- rolling_deviation(Dataset, p4n, q4gs, 6)
+Dataset <- rolling_deviation(Dataset, p4n, relq1gs, 6)
+Dataset <- rolling_deviation(Dataset, p4n, relq2gs, 6)
+Dataset <- rolling_deviation(Dataset, p4n, relq3gs, 6)
+Dataset <- rolling_deviation(Dataset, p4n, relq4gs, 6)
+Dataset <- rolling_deviation(Dataset, p4n, ethq1gs, 6)
+Dataset <- rolling_deviation(Dataset, p4n, ethq2gs, 6)
+Dataset <- rolling_deviation(Dataset, p4n, ethq3gs, 6)
+Dataset <- rolling_deviation(Dataset, p4n, ethq4gs, 6)
+
+#---------------------------
+# deaths 
+
+Dataset <- rolling_deviation(Dataset, p4n, deaths, 3)
+Dataset <- rolling_deviation(Dataset, p4n, deaths, 6)
+Dataset <- rolling_deviation(Dataset, p4n, deaths, 12)
+
+# incidents
+Dataset <- rolling_deviation(Dataset, p4n, Incidents, 3)
+Dataset <- rolling_deviation(Dataset, p4n, Incidents, 6)
+Dataset <- rolling_deviation(Dataset, p4n, Incidents, 12)
+
+
+
+#------------------------------------------------------------------------------
+# Forberedelse af data til modellering - 
+# I stedet for at lagge alle mine prædikatorer, leader jeg min responsvariable
+#
+
+data <-  Dataset %>%
+  group_by(p4n)%>% 
+  mutate(deaths = lead(deaths)) %>% 
+  ungroup()
+
+data <-  data %>%
+  group_by(p4n)%>% 
+  mutate(deathyear = lead(deathyear, n =12)) %>% 
+  ungroup()
+
+data <-  data %>%
+  group_by(p4n)%>% 
+  mutate(incidents = lead(Incidents)) %>% 
+  select(-Incidents)
+ungroup()
+
+
+data_sub <-Dataset %>%
+  filter(cwy == 1) %>%
+  group_by(p4n, year) %>%
+  arrange(p4n, year, month) %>% 
+  filter(row_number() == 1) %>%
+  group_by(p4n) %>%
+  mutate(is_contiguous = (year -1==lag(year))) 
+
+data_sub <- data_sub %>%
+  mutate(is_contiguous = case_when(is.na(is_contiguous) ~ FALSE,
+                                   TRUE~is_contiguous)) %>%
+  mutate(gvar = cumsum(!is_contiguous)) %>%
+  group_by(p4n, gvar) %>%
+  mutate(minyear = min(year),
+         maxyear = max(year)) %>%
+  ungroup() %>%
+  filter(is_contiguous == F | is.na(is_contiguous)) %>% 
+  mutate(cwstart = minyear, cwend = maxyear) %>% 
+  select(p4n, year, month,cwstart,cwend)
+
+data <- data %>% 
+  left_join(data_sub, by = c("p4n" = "p4n", "year" = "year", "month" = "month")) %>% 
+  mutate(cwstart = coalesce(cwstart,0),
+         cwend = coalesce(cwend,0))
+
+data <- data %>% 
+  mutate(cwstart = ifelse(cwstart>0,1,0),
+         cwend = ifelse(cwend>0,1,0))
+
+data <-  data %>%
+  group_by(p4n)%>% 
+  mutate(deathyear = lead(deathyear, n =12)) %>% 
+  ungroup()
+
+rm(data_sub)
+
+Dataset <-  data %>%
+  group_by(p4n)%>% 
+  mutate(cwm = lead(cwm))
+ungroup()
+
+
+
+
+#---------------------------------------------------------------------------
+#           Oprettelse af variable
+#  
+
+Dataset <-  Dataset %>% 
+  group_by(p4n) %>% 
+  mutate(pop_growth = log(population) - log(lag(population, n = 12)),
+         pop = log(population),
+         gdp_log = log(gdp_cd),
+         refurgescnt = log(refurgescnt)) %>% 
+  select(-gdp_cd)
 
 
 
@@ -209,190 +445,20 @@ rm(gdelt)
 ##############################################
 Dataset <- ungroup(Dataset)
 Dataset <- Dataset %>% 
-  select(-iso3c,-p4n,-fips,-country.name.en.y,-country, -iso2c, -geometry)
-
-##############################################
-#  Fixing data types and imputing 0 too no obs data
-##############################################
-
-
-#Data type fixer
-Dataset$conflict_incidents <- as.numeric(Dataset$conflict_incidents)
-
-#fixing the NA <- 0
-Dataset <- Dataset %>% mutate(deaths = coalesce(deaths,0),
-                              Incidents = coalesce(Incidents,0),
-                              sideA = coalesce(sideA,0),
-                              sideB = coalesce(sideB,0),
-                              deaths_running_month = coalesce(deaths_running_month,0),
-                              deathyear = coalesce(deathyear,0),
-                              deathsuma = coalesce(deathsuma,0),
-                              deathsumb = coalesce(deathsumb,0),
-                              cwy = coalesce(cwy,0),
-                              cwm = coalesce(cwm,0)
-                              )
-Dataset <-  Dataset %>% 
-  mutate(
-    q1at = coalesce(q1at,0),
-    q1cnt  = coalesce(q1cnt,0),
-    q2at  = coalesce(q2at,0),
-    q2cnt  = coalesce(q2cnt,0),
-    q3at  = coalesce(q3at,0),
-    q3cnt  = coalesce(q3cnt,0),
-    q4at  = coalesce(q4at,0),
-    q4cnt = coalesce(q4cnt,0),
-    
-    ethq1at = coalesce(ethq1at,0),
-    ethq1cnt = coalesce(ethq1cnt,0),
-    ethq2at = coalesce(ethq2at,0),
-    ethq2cnt = coalesce(ethq2cnt,0),
-    ethq3at = coalesce(ethq3at,0),
-    ethq3cnt = coalesce(ethq3cnt,0),
-    ethq4at = coalesce(ethq4at,0),
-    ethq4cnt = coalesce(ethq4cnt,0),
-    
-    relq1at = coalesce(relq1at,0),
-    relq1cnt = coalesce(relq1cnt,0),
-    relq2at = coalesce(relq2at,0),
-    relq2cnt = coalesce(relq2cnt,0),
-    relq3at = coalesce(relq3at,0),
-    relq3cnt = coalesce(relq3cnt,0),
-    relq4at = coalesce(relq4at,0),
-    relq4cnt = coalesce(relq4cnt,0)
-  )
-
-
-#Creating the bases for deviation 
-Dataset$date <- as.yearmon(paste(Dataset$year, Dataset$month), "%Y %m")
-Dataset$date <-  within(Dataset, Ddte <- sprintf("%d-%02d", year, month))
-
-
-# Grouped timedependent mean/deviation
-
-# Funktionen skal tage 4 argumenter: 
-#     1) Dataframe
-#     2) Variable / liste af variabler 
-#     3) variable der skal grupperes på
-#     4) Tidsperioden, for hvilket gennemsnittet skal udregnes. 
-
-
-setwd(DataCave)
-saveRDS(Dataset,file="data.rds")
-
-
-
-grouped_time_mean = function(df,group_var, var, time_in_month){
-  
-  #df <- Dataset
-  #group_var <- "p4n"
-  #var <- "q1cnt"
-  #time_in_month <- 6
-    
-  groupvar_q <- enquo(group_var)
-  variable_q <- enquo(var)
-  varname <- quo_name(variable_q)
-  timename <- toString(time_in_month)
-  dummy_name <- paste0("t_",timename, "_", varname)
-  
-  
-  df %>% 
-    group_by(!! groupvar_q) %>% 
-    mutate(
-      time2 = date %m-% months(time_in_month),
-      !! dummy_name := variable_q - mean(!! variable_q[which(date %within% interval(date-time2))]) %>% 
-        select(-"time2")
-    )
-}
-  
-a <-  grouped_time_mean(Dataset, p4n, q1cnt, 6)  
+  select(-iso3c,-p4n,-fips,-country.name.en.y, -iso2c, -geometry)
 
 
 
 
-
-
-maturity <- maturity %m-% months(6)
-
-grouped_mean_imputation <- function(df, group_var, impute_var){
-  # Mean imputes a column by groupl
-  #
-  # Creates a new column imputed_"impute_var": 
-  # is 1 if the variable is either imputed, or 
-  # still NA (no values in group to impute from).
-  # Is 0 if observation is original.
-  #
-  # Arguments:
-  #   df: a dataframe
-  #   group_var: the variable to group by.
-  #   impute_var: the variable to impute.
-  
-  
-  keys_q <- enquo(group_var)
-  values_q <- enquo(impute_var)
-  varname <- quo_name(values_q)
-  dummy_name <- paste0("imputed_", varname)
-  
-  df %>%
-    group_by(!! keys_q) %>%
-    mutate(
-      !! dummy_name := case_when(is.na(!! values_q) ~ 1,
-                                 T ~ 0), 
-      !! varname := case_when(is.na(!! values_q) ~ fixed_mean(!! values_q),
-                              T ~ !! values_q)
-    ) 
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-list_of_vars <- c("q1at","q2at","q3at","q4at","q1cnt","q2cnt","q3cnt","q4cnt","relq1at","relq2at","relq3at","relq4at","relq1cnt","relq2cnt","relq3cnt","relq4cnt","ethq1at","ethq2at","ethq3at","ethq4at","ethq1cnt","ethq2cnt","ethq3cnt","ethq4cnt")
-
-
-
-
-meaner_list = function(y,x){
-  for (i in x){
-    y %>% mutate(paste0("mean",x) := i - mean(i))
-  }
-}
-
-
-
-
-
-
-DataSet <-  DataSet %>% 
-  mutate(country = country.name.en)
-
-
-
-NA2mean <- function(x){x <- x %>% 
-  group_by(country) %>% 
-  replace(x, is.na(x), mean(x, na.rm = TRUE))}
-
-DataSet$gov_debt <- NA2mean(DataSet$gov_debt)
-
-
-replace(DF, TRUE, lapply(DF, NA2mean))
-
-
+Dataset <- Dataset %>% 
+  mutate(country = country.name.en.x) %>% 
+  select(-country.name.en.x)
 
 complete <- complete.cases(Dataset)
-completedata <- Dataset[complete,] # avvv - impute??!!
+completedata <- Dataset[complete,] # 46416
+
+dbWriteTable(con, "complete_data", 
+             value = completedata, overwrite = TRUE, row.names = FALSE)
 
 
 

@@ -60,14 +60,20 @@ library("pwt9")
 #geospatial
 library("sf")
 library("rgdal")
+library("rgeos")
 
 #visualisering
 library("ggplot2")
 library("ggthemes")
+library("ROCR")
+library("pROC")
+library("gridExtra")
+library("grpss")
 
 # regression
 library("caret")
 library("xgboost")
+library("randomForest")
 
 
 #functional programming
