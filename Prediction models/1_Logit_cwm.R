@@ -1,8 +1,6 @@
 
 #getting data
-completedata <-  dbGetQuery(con, "SELECT * from complete_data")
-data <-  completedata
-
+data <-  dbGetQuery(con, "SELECT * from complete_data_cwm")
 
 #Splitting data
 train_data <-  data %>%
@@ -12,13 +10,14 @@ test_data <- data %>%
 
 #removing data (factors and knowledge not attaindable at observation time)
 train_data <- train_data %>%
-  select(-country, - year, -month, -country.x, -country.y, -cwy,-deathyear)
+  select(-country, - year, -month, -cwy,-deathyear)
 test_data <- test_data %>%
-  select(-country, - year, -month, -country.x, -country.y,-cwy,-deathyear)
+  select(-country, - year, -month,-cwy,-deathyear)
 
 #Creating the model
 model <- glm(cwm ~  .,family=binomial(link='logit'),data=train_data)
 summary(model)
+setwd(Models)
 save(model, file = "0_glm_cwm.rda")
 
 
@@ -49,8 +48,8 @@ test_data %>%
               position = "dodge", draw_quantiles = NULL, trim = TRUE,
               scale = "area", na.rm = TRUE, show.legend = TRUE,
               inherit.aes = TRUE)+
-  geom_jitter(aes(color=pred_type),data= test_data, alpha=0.1, width = 0.4)+
-  geom_hline(yintercept=0.09, color="red", alpha=0.6)+
+  geom_jitter(aes(color=pred_type),data= test_data, alpha=0.2, width = 0.4)+
+  geom_hline(yintercept=0.125, color="red", alpha=0.6)+
   labs( y = "Prædikteret sandsynlighed for borgerkrig", x="") +
   scale_x_discrete(breaks=c("0","1"),
                    labels=c("ikke-borgerkrig \n y = 0", "Borgerkrig \n y = 1"))
@@ -122,7 +121,7 @@ plot_roc_and_cost <- function(roc, threshold, cost_of_fp, cost_of_fn) {
 }
 
 
-plot_roc_and_cost(roc, 0.2, 1, 4)
+plot_roc_and_cost(roc, 0.2, 1, 2)
 setwd(Latexfigure)
 ggsave(filename = "glm_roc_cost_.pdf" )
 
@@ -155,7 +154,6 @@ plot_roc <- function(roc, threshold, cost_of_fp, cost_of_fn) {
 plot_roc(roc, 0.20, 1, 4)
 setwd(Latexfigure)
 ggsave(filename = "glm_roc.pdf" )
-
 
 auc(test_data$cwm, test_data$cwm_pred)
 

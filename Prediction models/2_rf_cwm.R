@@ -1,8 +1,7 @@
 
 # Killing it with random forest
 
-completedata <-  dbGetQuery(con, "SELECT * from complete_data")
-data <-  completedata
+data <-  dbGetQuery(con, "SELECT * from complete_data_cwm")
 
 
 #Splitting data
@@ -13,12 +12,12 @@ test_data <- data %>%
 
 #removing data (factors and knowledge not attaindable at observation time)
 train_data <- train_data %>%
-  select(-country, - year, -month, -country.x, -country.y, -cwy,-deathyear)
+  select(-country, - year, -month, -cwy,-deathyear)
 test_data <- test_data %>%
-  select(-country, - year, -month, -country.x, -country.y,-cwy,-deathyear)
+  select(-country, - year, -month, -cwy,-deathyear)
 
 #Creating the model
-model <- randomForest(cwm ~ ., data=train_data ,ntree=1000, importance=TRUE)
+model <- randomForest(cwm ~ ., data=train_data ,ntree=250, importance=TRUE)
 model
 save(model, file = "2_rf_cwm.rda")
 

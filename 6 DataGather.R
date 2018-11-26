@@ -136,7 +136,7 @@ area <- dbGetQuery(con, "SELECT * from area") %>%
 
 Dataset <- Dataset %>% 
   left_join(area, by = c("iso2c" = "ISO2")) 
-
+rm(area)
 
 ##############################################
 #  Adding WDI to Dataset
@@ -359,29 +359,75 @@ Dataset <- rolling_deviation(Dataset, p4n, Incidents, 6)
 Dataset <- rolling_deviation(Dataset, p4n, Incidents, 12)
 
 
+#---------------------------------------------------------------------------
+#           Oprettelse af laggede variable
+#  
+
+Dataset <-  Dataset %>% 
+  group_by(p4n) %>% 
+  mutate(pop_growth = log(population) - log(lag(population, n = 12)),
+         pop = log(population),
+         gdp_log = log(gdp_cd),
+         refurgescnt = log(refurgescnt)) %>% 
+  select(-gdp_cd)
+
+
 
 #------------------------------------------------------------------------------
 # Forberedelse af data til modellering - 
 # I stedet for at lagge alle mine prædikatorer, leader jeg min responsvariable
 #
 
-data <-  Dataset %>%
+#---------------Lead death ----------------------
+
+complete_data_death <-  Dataset %>%
   group_by(p4n)%>% 
-  mutate(deaths = lead(deaths)) %>% 
-  ungroup()
+  mutate(deaths = lead(deaths),
+         country = country.name.en.x) %>% 
+  ungroup() %>% 
+  select(-iso3c,-p4n,-fips,-country.name.en.y, -iso2c, -geometry,-country.name.en.x, -country.x,-country.y)
 
-data <-  data %>%
+complete <- complete.cases(complete_data_death)
+complete_data_death <- complete_data_death[complete,] # 46298 obs
+
+dbWriteTable(con, "complete_data_death", 
+             value = complete_data_death, overwrite = TRUE, row.names = FALSE)
+
+
+
+#------------------Lead death year-----------------------------
+
+complete_data_deathyear <-  Dataset %>%
   group_by(p4n)%>% 
-  mutate(deathyear = lead(deathyear, n =12)) %>% 
-  ungroup()
+  mutate(deathyear = lead(deathyear, n =12),
+         country = country.name.en.x) %>% 
+  ungroup() %>% 
+  select(-iso3c,-p4n,-fips,-country.name.en.y, -iso2c, -geometry,-country.name.en.x, -country.x,-country.y)
 
-data <-  data %>%
+complete <- complete.cases(complete_data_deathyear)
+complete_data_deathyear <- complete_data_deathyear[complete,] # 45000
+
+dbWriteTable(con, "complete_data_deathyear",
+             value = complete_data_deathyear, overwrite = T, row.names = F)
+
+
+#-----------------Lead incidents------------------------
+
+complete_data_incident <-  Dataset %>%
   group_by(p4n)%>% 
-  mutate(incidents = lead(Incidents)) %>% 
-  select(-Incidents)
-ungroup()
+  mutate(incidents = lead(Incidents),
+         country = country.name.en.x) %>% 
+  select(-Incidents) %>% 
+  ungroup()  %>% 
+  select(-iso3c,-p4n,-fips,-country.name.en.y, -iso2c, -geometry,-country.name.en.x, -country.x,-country.y)
 
+complete <- complete.cases(complete_data_incident)
+complete_data_incident <- complete_data_incident[complete,] # 46298
 
+dbWriteTable(con, "complete_data_incident",
+             value= complete_data_incident, overwrite =T, row.names=F)
+
+#-------------------lead cw start----------------------------
 data_sub <-Dataset %>%
   filter(cwy == 1) %>%
   group_by(p4n, year) %>%
@@ -402,42 +448,45 @@ data_sub <- data_sub %>%
   mutate(cwstart = minyear, cwend = maxyear) %>% 
   select(p4n, year, month,cwstart,cwend)
 
-data <- data %>% 
+
+data_sub <- Dataset %>% 
   left_join(data_sub, by = c("p4n" = "p4n", "year" = "year", "month" = "month")) %>% 
   mutate(cwstart = coalesce(cwstart,0),
          cwend = coalesce(cwend,0))
 
-data <- data %>% 
+data_sub <- data_sub %>% 
   mutate(cwstart = ifelse(cwstart>0,1,0),
-         cwend = ifelse(cwend>0,1,0))
-
-data <-  data %>%
-  group_by(p4n)%>% 
-  mutate(deathyear = lead(deathyear, n =12)) %>% 
+         cwend = ifelse(cwend>0,1,0)) %>% 
   ungroup()
+
+complete_data_cwstart <-  data_sub %>% 
+  mutate(cwstart = lead(cwstart),
+         country = country.name.en.x) %>% 
+  select(-cwend,-iso3c,-p4n,-fips,-country.name.en.y, -iso2c, -geometry,-country.name.en.x, -country.x,-country.y)
+
+complete <- complete.cases(complete_data_cwstart)
+complete_data_cwstart <- complete_data_cwstart[complete,] #46415
+
+dbWriteTable(con, "complete_data_cwstart",
+             value = complete_data_cwstart, overwrite = T, row.names=F)
 
 rm(data_sub)
 
-Dataset <-  data %>%
+#---------------------------lead cwm---------------------------
+complete_data_cwm <-  Dataset %>%
   group_by(p4n)%>% 
-  mutate(cwm = lead(cwm))
-ungroup()
+  mutate(cwm = lead(cwm),
+         country = country.name.en.x) %>% 
+  ungroup() %>% 
+  select(-iso3c,-p4n,-fips,-country.name.en.y, -iso2c, -geometry,-country.name.en.x, -country.x,-country.y,-deathsuma,-deathsumb)
 
+complete <- complete.cases(complete_data_cwm)
+complete_data_cwm <- complete_data_cwm[complete,] # 46298
 
+dbWriteTable(con, "complete_data_cwm",
+             value= complete_data_cwm, overwrite = T, row.names=F)
 
-
-#---------------------------------------------------------------------------
-#           Oprettelse af variable
-#  
-
-Dataset <-  Dataset %>% 
-  group_by(p4n) %>% 
-  mutate(pop_growth = log(population) - log(lag(population, n = 12)),
-         pop = log(population),
-         gdp_log = log(gdp_cd),
-         refurgescnt = log(refurgescnt)) %>% 
-  select(-gdp_cd)
-
+rm(complete_data_cwm,complete_data_cwstart,complete_data_deathyear, complete_data_death,complete_data_incident)
 
 
 ##############################################
@@ -445,10 +494,7 @@ Dataset <-  Dataset %>%
 ##############################################
 Dataset <- ungroup(Dataset)
 Dataset <- Dataset %>% 
-  select(-iso3c,-p4n,-fips,-country.name.en.y, -iso2c, -geometry)
-
-
-
+  select(-iso3c,-p4n,-fips,-country.name.en.y, -iso2c, -geometry,-country.name.en.x, -country.x,-country.y)
 
 Dataset <- Dataset %>% 
   mutate(country = country.name.en.x) %>% 
@@ -460,5 +506,5 @@ completedata <- Dataset[complete,] # 46416
 dbWriteTable(con, "complete_data", 
              value = completedata, overwrite = TRUE, row.names = FALSE)
 
-
+rm(Dataset, data, Countries)
 
