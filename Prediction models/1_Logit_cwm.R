@@ -2,6 +2,15 @@
 #getting data
 data <-  dbGetQuery(con, "SELECT * from complete_data_cwm")
 
+
+#After postgres factors needs to be redefined
+data$Oil <-  as.factor(data$Oil)
+data$elct_comp <-  as.factor(data$elct_comp)
+data$elct_regulation <-  as.factor(data$elct_regulation)
+data$elct_open <-  as.factor(data$elct_open)
+data$exe_constraint <-  as.factor(data$exe_constraint)
+data$colstyle <-  as.factor( data$colstyle)
+
 #Splitting data
 train_data <-  data %>%
   filter(year <= 2011)

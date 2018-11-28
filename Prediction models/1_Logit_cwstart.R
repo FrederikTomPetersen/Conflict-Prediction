@@ -2,6 +2,15 @@
 #getting data
 data <-  dbGetQuery(con, "SELECT * from complete_data_cwstart")
 
+#After postgres factors needs to be redefined
+data$Oil <-  as.factor(data$Oil)
+data$elct_comp <-  as.factor(data$elct_comp)
+data$elct_regulation <-  as.factor(data$elct_regulation)
+data$elct_open <-  as.factor(data$elct_open)
+data$exe_constraint <-  as.factor(data$exe_constraint)
+data$colstyle <-  as.factor( data$colstyle)
+
+
 #Splitting data
 train_data <-  data %>%
   filter(year <= 2011)
@@ -15,7 +24,7 @@ test_data <- test_data %>%
   select(-country, - year, -month,-cwy,-deathyear)
 
 #Creating the model
-model <- glm(cwstart ~  .,family=binomial(link='logit'),data=train_data)
+model <- glm(as.factor(cwstart) ~  .,family=binomial(link='logit'),data=train_data)
 summary(model)
 setwd(Models)
 save(model, file = "0_glm_cwstart.rda")
@@ -38,7 +47,7 @@ plot_pred_type_distribution <- function(df, threshold) {
   v <- ifelse(df$cwstart_pred < threshold & df$cwstart == 0, "TN", v)
 }
 # Tilførelse af FP,FN,SP,SN til datasæt 
-test_data$pred_type <- plot_pred_type_distribution(test_data, 0.125)
+test_data$pred_type <- plot_pred_type_distribution(test_data, 0.001)
 
 
 #Plotting af densitet histogram med jitter og linje

@@ -63,6 +63,18 @@ Dataset <- Dataset %>%
          groupscount= ifelse(is.na(groupscount),1,groupscount))
 
 
+Dataset <-  Dataset %>%
+  group_by(p4n) %>% 
+  mutate(powerexcludednmb = lag(powerexcludednmb, n=12),
+         powerexcludedprop = lag(powerexcludedprop, n =12),
+         powersharennb = lag(powersharennb, n=12),
+         powershareprop = lag(powershareprop, n=12),
+         powerrulenmb = lag(powerrulenmb, n = 12),
+         powerruleprop = lag(powerruleprop, n =12),
+         powerirrelevantnmb = lag(powerirrelevantnmb, n=12),
+         powerirrelevantprop = lag(powerirrelevantprop, n=12),
+         groupscount = lag(groupscount, n =12))
+
 
 rm(epr, noinfo)
 
@@ -76,6 +88,10 @@ epr_er <-  dbGetQuery(con, "SELECT * from epr_er") %>%
 Dataset <- Dataset %>% 
   left_join(epr_er, by = c("p4n" = "ccode_coo", "year" = "year"))
 Dataset <- Dataset %>% mutate(refurgescnt = ifelse(is.na(refurgescnt),0,refurgescnt))
+
+Dataset <- Dataset %>% 
+  group_by(p4n) %>% 
+  mutate(refurgescnt = lag(refurgescnt, n=12))
 
 rm(epr_er)
 
@@ -95,12 +111,9 @@ Dataset <- Dataset %>%
   left_join(fl_rel, by = c("p4n" = "ccode")) %>% 
   left_join(fl_oil, by = c("p4n" = "ccode"))
 
-noinfo <- Dataset %>% 
-  filter(is.na(mtnest)) %>% 
-  select(country.name.en.x, iso3c,p4n,fips,iso2c) %>% 
-  unique()
+Dataset$Oil <-  as.factor(Dataset$Oil)
 
-rm(fl_mnt, fl_rel, fl_eth, fl_oil, noinfo)
+rm(fl_mnt, fl_rel, fl_eth, fl_oil)
 
 
 ##############################################
@@ -117,12 +130,41 @@ Dataset <-  Dataset %>%
          democ = ifelse(is.na(democ), -66, democ)) %>% 
   select(-ccode)
 
+
+Dataset <-  Dataset %>% 
+  group_by(p4n) %>% 
+  mutate(polity2 = lag(polity2, n=12),
+         autoc = lag(autoc,n=12),
+         democ = lag(democ, n=12),
+         elct_regulation = lag(xrreg, n=12),
+         elct_comp = lag(xrcomp, n=12),
+         elct_open = lag(xropen, n=12),
+         exe_constraint = lag(xconst, n=12)) %>% 
+  select(-xrreg, -xrcomp,-xropen,-xconst)
+
+Dataset$elct_comp <-  as.factor(Dataset$elct_comp)
+Dataset$elct_regulation <-  as.factor(Dataset$elct_regulation)
+Dataset$elct_open <-  as.factor(Dataset$elct_open)
+Dataset$exe_constraint <-  as.factor(Dataset$exe_constraint)
+
+
 noinfo1 <- Dataset %>% 
   filter(is.na(democ)) %>% 
   select(country.name.en.x, iso3c,p4n,fips) %>% 
   unique()
 
 rm(polity4, noinfo1)
+
+##############################################
+#  Colonial histery
+##############################################
+
+col_hist <- dbGetQuery(con, "SELECT * from col_hist")
+
+col_hist$colstyle <-  as.factor( col_hist$colstyle)
+
+Dataset <-  Dataset %>% 
+  left_join(col_hist, by = c("p4n" = "p4n"))
 
 
 
@@ -216,12 +258,28 @@ wdi <- wdi %>%
             import_gs = NE.IMP.GNFS.ZS
   )
 
+wdi <- wdi %>% 
+  mutate(negative_growth = ifelse(growth>=0,0,1))
 
 
 Dataset <- Dataset %>% 
   left_join(wdi, by = c("iso2c" = "iso2c", "year"="year")) 
 
+Dataset <-  Dataset %>% 
+  group_by(p4n) %>% 
+  mutate(gdp_p_ca =  lag(gdp_p_ca ,n=12),
+         gdp_cd =  lag(gdp_cd ,n=12),
+         growth =  lag( growth,n=12),
+         arableland =  lag(arableland ,n=12),
+         secondary_school =  lag(secondary_school ,n=12),
+         secondary_school_male =  lag(secondary_school_male ,n=12),
+         trade =  lag(trade ,n=12),
+         population =  lag(population ,n=12),
+         import_gs =  lag(import_gs ,n=12)
+         )
+
 rm(wdi)
+
 
 ##############################################
 #  Joining Gdelt to Dataset
