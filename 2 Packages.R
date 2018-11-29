@@ -32,7 +32,6 @@ library("countrycode")
 library("readxl")
 library("data.table")
 require("RPostgreSQL")
-require("caret")
 require("trellisscopejs")
 
 #genereal
@@ -74,6 +73,7 @@ library("grpss")
 library("caret")
 library("xgboost")
 library("randomForest")
+require("caret")
 
 
 #functional programming

@@ -463,3 +463,5 @@ rolling_deviation = function(df, group_var, var, months){
 
 
 #Funktionen virker efter hensigten.
+
+rm(Countries)

@@ -166,7 +166,7 @@ col_hist$colstyle <-  as.factor( col_hist$colstyle)
 Dataset <-  Dataset %>% 
   left_join(col_hist, by = c("p4n" = "p4n"))
 
-
+rm(col_hist)
 
 ##############################################
 #  Adding area to Dataset
@@ -418,7 +418,7 @@ Dataset <- rolling_deviation(Dataset, p4n, Incidents, 12)
 
 
 #---------------------------------------------------------------------------
-#           Oprettelse af laggede variable
+#           Oprettelse af loggede variable
 #  
 
 Dataset <-  Dataset %>% 
@@ -433,14 +433,14 @@ Dataset <-  Dataset %>%
 
 #------------------------------------------------------------------------------
 # Forberedelse af data til modellering - 
-# I stedet for at lagge alle mine prædikatorer, leader jeg min responsvariable
+# I stedet for at lagge alle mine prædikatorer, loger jeg min responsvariable
 #
 
-#---------------Lead death ----------------------
+#---------------lag death ----------------------
 
 complete_data_death <-  Dataset %>%
   group_by(p4n)%>% 
-  mutate(deaths = lead(deaths),
+  mutate(deaths = lag(deaths),
          country = country.name.en.x) %>% 
   ungroup() %>% 
   select(-iso3c,-p4n,-fips,-country.name.en.y, -iso2c, -geometry,-country.name.en.x, -country.x,-country.y)
@@ -453,11 +453,11 @@ dbWriteTable(con, "complete_data_death",
 
 
 
-#------------------Lead death year-----------------------------
+#------------------lag death year-----------------------------
 
 complete_data_deathyear <-  Dataset %>%
   group_by(p4n)%>% 
-  mutate(deathyear = lead(deathyear, n =12),
+  mutate(deathyear = lag(deathyear, n =12),
          country = country.name.en.x) %>% 
   ungroup() %>% 
   select(-iso3c,-p4n,-fips,-country.name.en.y, -iso2c, -geometry,-country.name.en.x, -country.x,-country.y)
@@ -469,11 +469,11 @@ dbWriteTable(con, "complete_data_deathyear",
              value = complete_data_deathyear, overwrite = T, row.names = F)
 
 
-#-----------------Lead incidents------------------------
+#-----------------lag incidents------------------------
 
 complete_data_incident <-  Dataset %>%
   group_by(p4n)%>% 
-  mutate(incidents = lead(Incidents),
+  mutate(incidents = lag(Incidents),
          country = country.name.en.x) %>% 
   select(-Incidents) %>% 
   ungroup()  %>% 
@@ -485,7 +485,7 @@ complete_data_incident <- complete_data_incident[complete,] # 46298
 dbWriteTable(con, "complete_data_incident",
              value= complete_data_incident, overwrite =T, row.names=F)
 
-#-------------------lead cw start----------------------------
+#-------------------lag cw start----------------------------
 data_sub <-Dataset %>%
   filter(cwy == 1) %>%
   group_by(p4n, year) %>%
@@ -518,7 +518,7 @@ data_sub <- data_sub %>%
   ungroup()
 
 complete_data_cwstart <-  data_sub %>% 
-  mutate(cwstart = lead(cwstart),
+  mutate(cwstart = lag(cwstart),
          country = country.name.en.x) %>% 
   select(-cwend,-iso3c,-p4n,-fips,-country.name.en.y, -iso2c, -geometry,-country.name.en.x, -country.x,-country.y)
 
@@ -530,10 +530,10 @@ dbWriteTable(con, "complete_data_cwstart",
 
 rm(data_sub)
 
-#---------------------------lead cwm---------------------------
+#---------------------------lag cwm---------------------------
 complete_data_cwm <-  Dataset %>%
   group_by(p4n)%>% 
-  mutate(cwm = lead(cwm),
+  mutate(cwm = lag(cwm),
          country = country.name.en.x) %>% 
   ungroup() %>% 
   select(-iso3c,-p4n,-fips,-country.name.en.y, -iso2c, -geometry,-country.name.en.x, -country.x,-country.y,-deathsuma,-deathsumb)
@@ -564,5 +564,5 @@ completedata <- Dataset[complete,] # 46416
 dbWriteTable(con, "complete_data", 
              value = completedata, overwrite = TRUE, row.names = FALSE)
 
-rm(Dataset, data, Countries)
+rm(Dataset,completedata)
 
