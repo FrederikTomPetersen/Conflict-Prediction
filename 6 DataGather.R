@@ -180,6 +180,26 @@ Dataset <- Dataset %>%
   left_join(area, by = c("iso2c" = "ISO2")) 
 rm(area)
 
+
+##############################################
+#  Adding diamonds to Dataset
+##############################################
+
+diamonds <-  dbGetQuery(con, "SELECT * from diamonds") 
+
+Dataset <-  Dataset  %>% 
+  left_join(diamonds, by = c("p4n" ="ccode"))
+
+Dataset$DIAP <-  as.numeric(Dataset$DIAP)
+Dataset$PDIAP <-  as.numeric(Dataset$PDIAP)
+Dataset$SDIAP <-  as.numeric(Dataset$SDIAP)
+
+Dataset <-  Dataset %>% 
+  mutate(DIAP = coalesce(DIAP, 0),
+         PDIAP = coalesce(PDIAP, 0),
+         SDIAP = coalesce(SDIAP, 0))
+
+
 ##############################################
 #  Adding WDI to Dataset
 ##############################################
@@ -418,7 +438,7 @@ Dataset <- rolling_deviation(Dataset, p4n, Incidents, 12)
 
 
 #---------------------------------------------------------------------------
-#           Oprettelse af loggede variable
+#           Oprettelse af loggede og laggede variable
 #  
 
 Dataset <-  Dataset %>% 
@@ -426,7 +446,9 @@ Dataset <-  Dataset %>%
   mutate(pop_growth = log(population) - log(lag(population, n = 12)),
          pop = log(population),
          gdp_log = log(gdp_cd),
-         refurgescnt = log(refurgescnt)) %>% 
+         refurgescnt = log(refurgescnt),
+         deathsuma = lag(deathsuma, n=12),
+         deathsumb = lag(deathsumb, n=12)) %>% 
   select(-gdp_cd)
 
 
@@ -485,6 +507,28 @@ complete_data_incident <- complete_data_incident[complete,] # 46298
 dbWriteTable(con, "complete_data_incident",
              value= complete_data_incident, overwrite =T, row.names=F)
 
+
+
+
+#-----------------------------------------------------
+#Intensitet
+
+complete_data_intensitet <-  Dataset %>%
+  group_by(p4n)%>% 
+  mutate(intensitet = lag(deaths) / lag(Incidents),
+         country = country.name.en.x) %>% 
+  ungroup()  %>% 
+  select(-iso3c,-p4n,-fips,-country.name.en.y, -iso2c, -geometry,-country.name.en.x, -country.x,-country.y)
+
+complete_data_intensitet <- complete_data_intensitet %>% 
+  mutate(intensitet = coalesce(intensitet,0))
+
+complete <- complete.cases(complete_data_intensitet)
+complete_data_intensitet <- complete_data_intensitet[complete,] # 46298
+
+dbWriteTable(con, "complete_data_intensitet",
+             value= complete_data_intensitet, overwrite =T, row.names=F)
+
 #-------------------lag cw start----------------------------
 data_sub <-Dataset %>%
   filter(cwy == 1) %>%
@@ -536,7 +580,7 @@ complete_data_cwm <-  Dataset %>%
   mutate(cwm = lag(cwm),
          country = country.name.en.x) %>% 
   ungroup() %>% 
-  select(-iso3c,-p4n,-fips,-country.name.en.y, -iso2c, -geometry,-country.name.en.x, -country.x,-country.y,-deathsuma,-deathsumb)
+  select(-iso3c,-p4n,-fips,-country.name.en.y, -iso2c, -geometry,-country.name.en.x, -country.x,-country.y)
 
 complete <- complete.cases(complete_data_cwm)
 complete_data_cwm <- complete_data_cwm[complete,] # 46298

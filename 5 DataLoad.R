@@ -378,9 +378,32 @@ rm(fldata, religiousfractionalization,mountains,ethnicfractionalization,oil)
 
 
 
+############################################################
+#                                                          #
+#                    Diamonds data                         #
+#                                                          #
+#                                                          #
+############################################################
+
+setwd(DataCave)
+direct_link <-  "http://file.prio.no/ReplicationData/Glimore,%20Gleditsch,%20Lujala%20-%20A%20Diamond%20Curse,%2049(4).zip"
+download.file(direct_link, basename(direct_link))
+unzip(basename(direct_link))
+unzip("LGG A Diamond Curse - Replication Data JCR 2005.zip")
+data <- read.dta("A Diamond Curse LGG replication data JCR Special Issue 2005.dta") %>% 
+  filter(year >=1989) %>% 
+  select(ccode, year, DIAP,PDIAP,SDIAP, - year) %>% 
+  distinct()
+
+unlink(direct_link)
+
+data <- data[-c(27, 4, 162), ]
 
 
+dbWriteTable(con, "diamonds", 
+             value = data, overwrite = TRUE, row.names = FALSE)
 
+rm(data)
 
 
 ############################################################
