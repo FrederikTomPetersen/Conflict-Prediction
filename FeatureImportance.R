@@ -1,0 +1,114 @@
+
+#Imporatance of variables in the 4 EGBtree models
+
+setwd(Models)
+load("3_egbt_cwstart.rda")
+load("3_egbt_cwm.rda")
+load("3_egbt_deaths.rda")
+load("3_egbt_incidents.rda")
+
+options("scipen"=100, "digits"=7)
+
+# cwstart 
+varimp_cwstart <- caret::varImp(model_egbt_cwstart)$importance
+varimp_names_cwstart <- rownames(varimp_cwstart)
+rownames(varimp_cwstart) <- NULL
+varimp_cwstart <-  cbind(varimp_names_cwstart,varimp_cwstart)
+names(varimp_cwstart)[names(varimp_cwstart)=="varimp_names_cwstart"] <- "var"
+
+# cwm
+varimp_cwm <- caret::varImp(model_egbt_cwm)$importance
+varimp_names_cwm <- rownames(varimp_cwm)
+rownames(varimp_cwm) <- NULL
+varimp_cwm <-  cbind(varimp_names_cwm,varimp_cwm)
+names(varimp_cwm)[names(varimp_cwm)=="varimp_names_cwm"] <- "var"
+
+# deaths
+varimp_deaths <- caret::varImp(model_egbt_deaths)$importance
+varimp_names_deaths <- rownames(varimp_deaths)
+rownames(varimp_deaths) <- NULL
+varimp_deaths <-  cbind(varimp_names_deaths,varimp_deaths)
+names(varimp_deaths)[names(varimp_deaths)=="varimp_names_deaths"] <- "var"
+
+# incidents
+varimp_incidents <- caret::varImp(model_egbt_incidents)$importance
+varimp_names_incidents <- rownames(varimp_incidents)
+rownames(varimp_incidents) <- NULL
+varimp_incidents <-  cbind(varimp_names_incidents,varimp_incidents)
+names(varimp_incidents)[names(varimp_incidents)=="varimp_names_incidents"] <- "var"
+
+importancedf <- varimp_cwstart %>% 
+  left_join(varimp_cwm, by = c("var"="var")) %>% 
+  left_join(varimp_deaths, by = c("var"="var")) %>% 
+  left_join(varimp_incidents, by = c("var"="var"))
+
+names(importancedf)[names(importancedf)=="Overall.x"] <- "cwstart"
+names(importancedf)[names(importancedf)=="Overall.y"] <- "cwm"
+names(importancedf)[names(importancedf)=="Overall.x.x"] <- "deaths"
+names(importancedf)[names(importancedf)=="Overall.y.y"] <- "incidents"
+
+complete <-  complete.cases(importancedf)
+importancedf <-  importancedf[complete,]
+
+importancedf$var <- gsub('q1at', 'Verbalt samarbejde - gns. tone ', importancedf$var)
+importancedf$var <- gsub('q2at', 'Materielt samarbejde - gns. tone ', importancedf$var)
+importancedf$var <- gsub('q3at', 'Verbalt modarbejde - gns. tone', importancedf$var)
+importancedf$var <- gsub('q4at', 'Materielt modarbejde - gns. tone', importancedf$var)
+importancedf$var <- gsub('q1gs', 'Verbalt samarbejde - GS ', importancedf$var)
+importancedf$var <- gsub('q2gs', 'Materielt samarbejde - GS ', importancedf$var)
+importancedf$var <- gsub('q3gs', 'Verbalt modarbejde - GS', importancedf$var)
+importancedf$var <- gsub('q4gs', 'Materielt modarbejde - GS', importancedf$var)
+importancedf$var <- gsub('q1cnt', 'Verbalt samarbejde - antal ', importancedf$var)
+importancedf$var <- gsub('q2cnt', 'Materielt samarbejde - antal ', importancedf$var)
+importancedf$var <- gsub('q3cnt', 'Verbalt modarbejde - antal', importancedf$var)
+importancedf$var <- gsub('q4cnt', 'Materielt modarbejde - antal', importancedf$var)
+importancedf$var <- gsub('rm_6_', 'rm(6)_', importancedf$var)
+importancedf$var <- gsub('rm_3_', 'rm(3)_', importancedf$var)
+importancedf$var <- gsub('rm_12_', 'rm(12)_', importancedf$var)
+importancedf$var <- gsub('pop_growth', 'Befolkningsvækst', importancedf$var)
+importancedf$var <- gsub('secondary_school', 'Sekundær skole, indskrivning %', importancedf$var)
+importancedf$var <- gsub('growth', 'Vækst', importancedf$var)
+importancedf$var <- gsub('powerexcludedprop', 'Politisk ekskluderet', importancedf$var)
+importancedf$var <- gsub('refurgescnt', 'Antal flygtninge', importancedf$var)
+importancedf$var <- gsub('pop', 'Befolkningsstørrelse', importancedf$var)
+importancedf$var <- gsub('trade', 'Handel', importancedf$var)
+importancedf$var <- gsub('powershare_prop', 'Politisk inkluderet', importancedf$var)
+importancedf$var <- gsub('mtnest', 'Terræn', importancedf$var)
+importancedf$var <- gsub('eth', 'etnisk_', importancedf$var)
+
+importancedf <-  importancedf %>% 
+  group_by(var) %>% 
+  mutate(total_imp = sum(cwstart + cwm + deaths + incidents),
+         mean_imp = (cwstart + cwm + deaths + incidents)/4)
+
+
+
+importancedf <- importancedf %>% 
+  arrange(desc(total_imp))
+
+top_importance <-  importancedf[1:20,]
+
+
+importancenoconflict <- importancedf[!grepl("death", importancedf$var),]
+importancenoconflict <- importancenoconflict[!grepl("Incident", importancenoconflict$var),]
+importancenoconflict <- importancenoconflict[!grepl("side", importancenoconflict$var),]
+importancenoconflict <-  importancenoconflict %>% 
+  arrange(desc(total_imp))
+importancenoconflict <- importancenoconflict[1:20,]
+
+
+importancenoconflict <-  importancenoconflict %>% 
+  mutate(zero = 0)
+
+importancenoconflict$var = as.factor(importancenoconflict$var)
+importancenoconflict$var = fct_reorder(importancenoconflict$var, importancenoconflict$mean_imp)
+
+ggplot(importancenoconflict) +
+  geom_segment(aes(x=zero, xend=mean_imp, y=var, yend=var), size=0.8) +
+  labs(y = "", x ="Gennemsnitlige importance")
+
+
+ggplot(importancenoconflict) +
+  geom_segment(aes(x=zero, xend=total_imp, y=var, yend=var), size=0.8) +
+  labs(y = "", x ="Gennemsnitlige importance")
+

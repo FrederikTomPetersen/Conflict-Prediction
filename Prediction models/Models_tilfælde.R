@@ -153,3 +153,7 @@ pdf("incidents_figure.pdf")
 grid.arrange(point_incidents, kerneldensity)
 dev.off()
 
+varimp_incidents <- varImp(model_egbt_incidents)$importance
+setwd(Models)
+save(varimp_incidents,file="varimp_incidents.Rda")
+
