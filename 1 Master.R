@@ -24,7 +24,7 @@ source("3 Functions.R") # Definere en række funktioner, der anvendes primært i
 
 source("4 PostGres_connect.R") # Forbinder til PostgresSQl - kræver tilretning (!!!)
 
-source("5 DataLoad.R") # Henter og gemmer data i PostgresSQL
+#source("5 DataLoad.R") # Henter og gemmer data i PostgresSQL
 
 source("6 DataGather.R") # Samler data til et samlet datasæt
 
