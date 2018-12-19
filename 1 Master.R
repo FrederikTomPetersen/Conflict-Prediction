@@ -6,7 +6,7 @@ cat("\014")
 ###                                                                ###
 ######################################################################
 
-#Possible workspaces - adjust to your local preferences
+#Definere en række workspaces - kræver tilpasning til egen computer
 DataCave = "C:/Users/Frederik/Documents/SpecialeData/"
 Private = "C:/Users/Frederik/Documents/SpecialeScripts/"
 GitHub = "C:/Users/Frederik/Documents/GitHub/Ethnic-Conflict-Prediction"
@@ -14,34 +14,24 @@ Models = "C:/Users/Frederik/Documents/GitHub/Ethnic-Conflict-Prediction/Predicti
 Latexfigure ="C:/Users/Frederik/OneDrive - Københavns Universitet/Speciale paper/03_figures"
 Latextable= "C:/Users/Frederik/OneDrive - Københavns Universitet/Speciale paper/04_tables"
   
-
-
-# This scripts binds the dataanalysis of my thesis. It aims to control 
-# the workflow of the project. it starts out by loading all the necessary packages 
-# for the project. Then it defines alle the functions neccesary for the later scripts. 
-# After this intial defintions it starts getting the data from different sources. 
-# When the datasets are gathered it will automatically begin to tidy the data in order to make af join possible
-# after the data are gathered 
+# De følgende scripts kører projektet fra ende til anden
 
 setwd(GitHub)
 
-source("2 Packages.R")
+source("2 Packages.R") #Indhenter relevanter pakker for projektet
 
-source("3 Functions.R")
+source("3 Functions.R") # Definere en række funktioner, der anvendes primært i Dataload.R
 
-source("4 PostGres_connect.R")
+source("4 PostGres_connect.R") # Forbinder til PostgresSQl - kræver tilretning (!!!)
 
-#source("DataLoad.R")
+source("5 DataLoad.R") # Henter og gemmer data i PostgresSQL
 
-source("DataGather.R")
+source("6 DataGather.R") # Samler data til et samlet datasæt
 
-#source("DataXplore.R")
+source("7 Visulization.R") # foretager en række visalisering af data
 
-#source("DataAnalysis.R")
+source("8 Analyse.R") # Fortager prædiktions analysen
 
-#source("DataProducts.R")
+source("9 Importance.R") # Foretage importance analysen
 
-
-#####Data_reloader#####
-#Congrats - you effectively fucked up your main dataset -to obtain it again simple load it with the FuckUp.R script
-#source("FuckUp.R")
+source("10 Tuning.R") # Foretager Tuning analysen

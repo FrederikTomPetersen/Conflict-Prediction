@@ -208,9 +208,18 @@ roc <- calculate_roc(test_data, 1, 10)
 roc_egbt_cwm <- plot_roc(roc, 0.0396, 1,10)
 roc_egbt_cwm
 
+
+
+
 #Samling af ROC-kurver
 setwd(Latexfigure)
 pdf("roc_cwm.pdf")
+grid.arrange(roc_baseline_cvm, roc_rf_cwm,roc_egbt_cwm, ncol=3, nrow=1)
+dev.off()
+
+
+setwd(Latexfigure)
+png("roc_cwm.png")
 grid.arrange(roc_baseline_cvm, roc_rf_cwm,roc_egbt_cwm, ncol=3, nrow=1)
 dev.off()
 
@@ -313,6 +322,14 @@ setwd(Latexfigure)
 pdf("density_cwm.pdf")
 grid.arrange(densitet_baseline_cwm, densitet_rf_cwm,densitet_egbt_cwm)
 dev.off()
+
+
+
+setwd(Latexfigure)
+png("density_cwm.png")
+grid.arrange(densitet_baseline_cwm, densitet_rf_cwm,densitet_egbt_cwm, ncol=1, nrow=3)
+dev.off()
+
 
 # ---------------------------------
 # Area under curve

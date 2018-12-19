@@ -1,29 +1,18 @@
 cat("\014")  
 ######################################################################
 ###                                                                ###
-###              Installing and fetching pacakges                  ###
+###                         Load af pakker                         ###
 ###                                                                ###
 ###################################################################### 
 
-#Installation af pakker og hentning af relvante pakker 
-
-# devtools::install_github("hadley/devtools")
-# devtools::install_github("hadley/dplyr")
-# devtools::install_github("hafen/trelliscopejs")
-# devtools::install_github("abresler/gdeltr2")
-#devtools::install_github("ropensci/rWBclimate")
+#Load af pakker. Kræver at pakkerne er installeret gennem eksempelvis install.packages() funktionen
 
 
-# install.packages("imputeTS")
-# library("imputeTS")
-# mice  pakken skal ogs? ind 
-#
-
-#States
+#Indhentning af landekoder
 library("states")
 library("countrycode")
 
-#ggdelt and posgres
+# Pakker til GDELT og PostgresSQL
 library("devtools")
 library("gdeltr2")
 library("hrbrthemes")
@@ -34,7 +23,7 @@ library("data.table")
 require("RPostgreSQL")
 require("trellisscopejs")
 
-#genereal
+#Genrelle pakker
 library("dplyr")
 library("tidyverse")
 library("data.table")
@@ -44,35 +33,32 @@ library("xtable")
 library("foreign")
 library("lubridate")
 
-#imputing
+#Impute af data
 library("mice")
 library("VIM")
 library("simputation")
 
 
-#Getting data
+#Hentning af data
 library("WDI") #world bank development indicators
 library("rWBclimate") # rWBclimate
 library("psData") #Polity IV data 
 library("pwt9")
 
-#geospatial
+#Geospatial
 library("sf")
 library("rgdal")
 library("rgeos")
 
-#visualisering
+#Visualisering
 library("ggplot2")
 library("ggthemes")
 library("ROCR")
 library("pROC")
 library("gridExtra")
 
-# regression
+# Modellering af data
 library("caret")
 library("xgboost")
 library("randomForest")
 
-
-#functional programming
-#purrr

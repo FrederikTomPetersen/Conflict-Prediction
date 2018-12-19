@@ -192,6 +192,12 @@ grid.arrange(roc_baseline_cvm, roc_rf_cwstart,roc_egbt_cwstart, ncol=3, nrow=1)
 dev.off()
 
 
+setwd(Latexfigure)
+png("roc_cwstart.png")
+grid.arrange(roc_baseline_cvm, roc_rf_cwstart,roc_egbt_cwstart, ncol=3, nrow=1)
+dev.off()
+
+
 
 
 
@@ -314,6 +320,11 @@ pdf("density_cwstart.pdf")
 grid.arrange(densitet_baseline_cwstart, densitet_rf_cwstart,densitet_egbt_cwstart)
 dev.off()
   
+setwd(Latexfigure)
+png("density_cwstart.png")
+grid.arrange(densitet_baseline_cwstart, densitet_rf_cwstart,densitet_egbt_cwstart)
+dev.off()
+
 
 
 #-------------------------------------------------------

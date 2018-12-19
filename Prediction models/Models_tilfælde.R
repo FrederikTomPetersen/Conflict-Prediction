@@ -1,9 +1,9 @@
 
 # 
-# setwd(Models)
-# load("0_lm_incidents.rda")
-# load("2_rf_incidents.rda")
-# load("3_egbt_incidents.rda")
+setwd(Models)
+load("0_lm_incidents.rda")
+ load("2_rf_incidents.rda")
+ load("3_egbt_incidents.rda")
 
 #-----------------------------------------------------------
 # Dannelse af forudsigelsesmodeller for udbrud af borgerkrig
@@ -11,7 +11,8 @@
 #
 #Indhentning af data fra PostGresSQL - database. Alternativ load complete_data_incidents.rds
 data <-  dbGetQuery(con, "SELECT * from complete_data_incident")
-
+ 
+ 
 # postgressql kan ikke håndtere faktor variable, så disse skal redefineres: 
 data$Oil <-  as.factor(data$Oil)
 data$elct_comp <-  as.factor(data$elct_comp)
@@ -22,7 +23,6 @@ data$colstyle <-  as.factor( data$colstyle)
 data$DIAP <-  as.factor(data$DIAP)
 data$PDIAP <-  as.factor(data$PDIAP)
 data$SDIAP <-  as.factor(data$SDIAP)
-data$cwstart <- as.factor(data$cwstart)
 data$cwm <- as.factor(data$cwm)
 
 #Oprettelse af træningsdatasæt og testdatasæt - Bloksplit
@@ -150,6 +150,11 @@ kerneldensity
 library("gridExtra")
 setwd(Latexfigure)
 pdf("incidents_figure.pdf")
+grid.arrange(point_incidents, kerneldensity)
+dev.off()
+
+setwd(Latexfigure)
+png("incidents_figure.png")
 grid.arrange(point_incidents, kerneldensity)
 dev.off()
 

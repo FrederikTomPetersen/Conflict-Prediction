@@ -1,16 +1,12 @@
 cat("\014")  
 ################################################################################################
-##                            Defining * functions for the project                            ##
+##                    Oprettelse af diverse funktioner til projektet                          ##
 ################################################################################################
 
-#in this script all functions necessary will be defined
-# the script should be runned after the library scripts
-# the functions will indepentdently becalled in the sequent scripts where they will come to use
 
 
 
-#In order  to get the three gdelt_getters to work a country list must be defined 
-
+# oprettelse af liste med lande til Gdelt_getter funktionerne
 Countries <-  codelist_panel %>% 
   select(country.name.en,iso2c) %>% 
   distinct(country.name.en,iso2c)
@@ -23,9 +19,7 @@ myvars2 <- c("GLOBALEVENTID","year", "month", "Actor1Code", "Actor2Code", "Actor
 ###################################################################
 #                      Gdelt_getter 1                            #
 ###################################################################
-# This functions automates the proces for downloading and appending the GDELT dataset
-# The function takes the argument x and m 
-# x must be a list URL containing the direct link to 
+# Hentning at GDELT-data 1
 
 
 Gdelt_getter_1 = function(x, m) {
@@ -72,10 +66,7 @@ Gdelt_getter_1 = function(x, m) {
 ###################################################################
 #                          Gdelt_getter 2                           #
 ###################################################################
-# This functions automates the proces for downloading and appending the GDELT dataset - aim for the year month urls
-# The function takes the argument x and m 
-# x must be a list URL containing the direct link to 
-
+# GDELT-getter 2
 
 Gdelt_getter_2 = function(x, m) {
   for (i in x){
@@ -165,28 +156,9 @@ Gdelt_getter_3 = function(x, m) {
 
 
 
-###################################################################
-#       Goverment detection (only disaggregated GED data)         #
-###################################################################
-
-#GOVDetectFunction
-GovDetect = function(df){
-  df <- df %>% 
-    mutate(
-      side_A = tolower(side_a),
-      side_b = tolower(side_b),
-      lista = str_detect(side_a, "Government"), 
-      listb = str_detect(side_b, "Government")) %>% 
-    mutate( GOV = case_when(lista == T ~ "A",
-                            listb == T ~ "B"))
-  return(df)
-  rm(lista, listb)
-}
-
-
 
 #################################################
-#         GED tidy function Functions           #
+#   Global Event Data tidy function Functions   #
 
 
 #group and summarize functions
@@ -206,10 +178,6 @@ Total_Deaths = function(x) {
 }
 
 
-# nåske noget i stil med dette i for loopet conflicts_all <-  conflicts_all[, deaths_running_year := cumsum(deaths_a +deaths_b + deaths_civ + deaths_unk), by=list(country, year)] 
-
-
-
 Ged_Sum = function(x){
   x <- x %>% 
     summarize(total_deaths = sum(deaths_a+deaths_b+deaths_civ+deaths_unk),
@@ -221,22 +189,11 @@ Ged_Sum = function(x){
     arrange(country, year, month)
 }
 
-#################################################
-
-
-
 
 ###################################################################
 #                     Tidyr Replace NA                            #
 ###################################################################
 tidyr_replace_na   <- function(x) { replace_na(x, as.list(setNames(rep(0, 10), as.list(c(paste0("var", 1:10)))))) }
-
-
-
-
-
-
-
 
 
 #EventClassifier 
@@ -311,8 +268,6 @@ approximate_or_distance = function(x) {
            }
     )
   }
-
-
 
 
 #####################################################################

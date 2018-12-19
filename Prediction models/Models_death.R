@@ -23,7 +23,6 @@ data$DIAP <-  as.factor(data$DIAP)
 data$PDIAP <-  as.factor(data$PDIAP)
 data$SDIAP <-  as.factor(data$SDIAP)
 data$cwm <- as.factor(data$cwm)
-data$cwstart <- as.factor(data$cwstart)
 
 #Oprettelse af træningsdatasæt og testdatasæt - Bloksplit
 train_data <-  data %>%
@@ -139,4 +138,7 @@ pdf("deathsplot.pdf")
 grid.arrange(deathpointplot,kerneldensity)
 dev.off()
 
-
+setwd(Latexfigure)
+png("deathsplot.png")
+grid.arrange(deathpointplot,kerneldensity)
+dev.off()

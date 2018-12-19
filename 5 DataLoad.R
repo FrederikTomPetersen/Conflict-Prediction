@@ -6,12 +6,7 @@ cat("\014")
 #                                                          #
 ############################################################
 
-# This Script downlaod/fetch each of the individual dataset
-# first it will temperaily store it in your datacave before
-# saves it to a postgres database. In order for this to work 
-# you must fist install a postgres on your computer,
-# set up a DB and define the postgres connection as advised the master scripts 
-
+# dette script henter data og gemmer til lokal postgresdatabase
 
 ############################################################
 #                                                          #
