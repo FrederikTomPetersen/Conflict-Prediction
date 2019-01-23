@@ -11,6 +11,7 @@ DataCave = "C:/Users/Frederik/Documents/SpecialeData/"
 Private = "C:/Users/Frederik/Documents/SpecialeScripts/"
 GitHub = "C:/Users/Frederik/Documents/GitHub/Ethnic-Conflict-Prediction"
 Models = "C:/Users/Frederik/Documents/GitHub/Ethnic-Conflict-Prediction/Prediction models/models/"
+Datafinal = "C:/Users/Frederik/Documents/GitHub/Ethnic-Conflict-Prediction/Data/"
 Latexfigure ="C:/Users/Frederik/OneDrive - Københavns Universitet/Speciale paper/03_figures"
 Latextable= "C:/Users/Frederik/OneDrive - Københavns Universitet/Speciale paper/04_tables"
   

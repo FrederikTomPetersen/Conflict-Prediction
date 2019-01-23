@@ -1,4 +1,4 @@
-
+set.seed(42)
 #-----------------------------------------------------------
 # Dannelse af forudsigelsesmodeller for udbrud af borgerkrig
 #
@@ -6,7 +6,7 @@
 setwd(Models)
 load("0_lm_deaths.rda")
 load("2_rf_deaths.rda")
-load("3_egbt_deaths.rda")
+load("3_egbt_deaths2.rda")
 
 
 #Indhentning af data fra PostGresSQL - database. Alternativ load complete_data_deaths.rds
@@ -140,5 +140,5 @@ dev.off()
 
 setwd(Latexfigure)
 png("deathsplot.png")
-grid.arrange(deathpointplot,kerneldensity)
+gridExtra::grid.arrange(deathpointplot,kerneldensity)
 dev.off()
